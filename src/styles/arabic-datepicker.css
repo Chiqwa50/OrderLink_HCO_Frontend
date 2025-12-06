@@ -1,0 +1,246 @@
+/* تخصيص react-datepicker للعربية و RTL - تصميم Shadcn UI */
+
+.react-datepicker-wrapper,
+.react-datepicker__input-container {
+  width: 100%;
+  display: block;
+}
+
+.react-datepicker.arabic-calendar {
+  font-family: inherit;
+  direction: rtl;
+  background-color: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  padding: 0;
+  display: flex;
+}
+
+/* الرأس (الشهر والسنة) */
+.arabic-calendar .react-datepicker__header {
+  background-color: transparent;
+  border-bottom: 1px solid hsl(var(--border));
+  padding: 1rem 0 0.5rem;
+  position: relative;
+}
+
+.arabic-calendar .react-datepicker__current-month {
+  color: hsl(var(--foreground));
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+/* أيام الأسبوع */
+.arabic-calendar .react-datepicker__day-names {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.arabic-calendar .react-datepicker__day-name {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8rem;
+  font-weight: 400;
+  width: 2rem;
+  line-height: 2rem;
+  text-align: center;
+  margin: 0;
+}
+
+/* شبكة الأيام */
+.arabic-calendar .react-datepicker__month {
+  margin: 0;
+  padding: 0 0.5rem 0.5rem;
+}
+
+.arabic-calendar .react-datepicker__week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.arabic-calendar .react-datepicker__day {
+  color: hsl(var(--foreground));
+  width: 2rem;
+  line-height: 2rem;
+  text-align: center;
+  margin: 0;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.arabic-calendar .react-datepicker__day:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.arabic-calendar .react-datepicker__day--selected,
+.arabic-calendar .react-datepicker__day--keyboard-selected {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-weight: 600;
+}
+
+.arabic-calendar .react-datepicker__day--today {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  font-weight: 600;
+}
+
+.arabic-calendar .react-datepicker__day--outside-month {
+  color: hsl(var(--muted-foreground));
+  opacity: 0.5;
+}
+
+.arabic-calendar .react-datepicker__day--disabled {
+  color: hsl(var(--muted-foreground));
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.arabic-calendar .react-datepicker__day--disabled:hover {
+  background-color: transparent;
+}
+
+/* أزرار التنقل */
+.arabic-calendar .react-datepicker__navigation {
+  top: 1rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.arabic-calendar .react-datepicker__navigation:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.arabic-calendar .react-datepicker__navigation--previous {
+  right: 1rem;
+  left: auto;
+}
+
+.arabic-calendar .react-datepicker__navigation--next {
+  left: 1rem;
+  right: auto;
+}
+
+/* أيقونات الأسهم */
+.arabic-calendar .react-datepicker__navigation-icon {
+  font-size: 0;
+}
+
+.arabic-calendar .react-datepicker__navigation-icon::before {
+  content: "";
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid hsl(var(--foreground));
+  border-right: 2px solid hsl(var(--foreground));
+  transform: rotate(45deg);
+  margin-right: 2px;
+  margin-top: 2px;
+}
+
+.arabic-calendar .react-datepicker__navigation--previous .react-datepicker__navigation-icon::before {
+  transform: rotate(225deg);
+  /* سهم لليمين في RTL يعني السابق */
+  margin-right: -2px;
+}
+
+.arabic-calendar .react-datepicker__navigation--next .react-datepicker__navigation-icon::before {
+  transform: rotate(45deg);
+  /* سهم لليسار في RTL يعني التالي */
+}
+
+/* حاوية الوقت */
+.arabic-calendar .react-datepicker__time-container {
+  border-right: 1px solid hsl(var(--border));
+  border-left: none;
+  width: 100px;
+  display: flex;
+  flex-direction: column;
+}
+
+.arabic-calendar .react-datepicker__time-container .react-datepicker__header {
+  padding-top: 0;
+  height: auto;
+  border-bottom: 1px solid hsl(var(--border));
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  /* نفس ارتفاع هيدر التقويم تقريباً */
+}
+
+.arabic-calendar .react-datepicker__time-container .react-datepicker-time__header {
+  color: hsl(var(--foreground));
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.arabic-calendar .react-datepicker__time-container .react-datepicker__time {
+  background: transparent;
+}
+
+.arabic-calendar .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box {
+  width: 100%;
+  border-radius: 0;
+}
+
+.arabic-calendar .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list {
+  padding: 0.5rem 0;
+}
+
+.arabic-calendar .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item {
+  height: auto;
+  padding: 0.5rem;
+  color: hsl(var(--foreground));
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arabic-calendar .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.arabic-calendar .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--selected {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-weight: 600;
+}
+
+/* إخفاء المثلث */
+.react-datepicker__triangle {
+  display: none;
+}
+
+/* Portal z-index - يجب أن يكون أعلى من Dialog */
+.react-datepicker-popper {
+  z-index: 9999 !important;
+}
+
+#datepicker-portal {
+  z-index: 9999 !important;
+}
+
+#datepicker-portal .react-datepicker {
+  z-index: 9999 !important;
+}
