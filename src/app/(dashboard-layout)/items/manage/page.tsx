@@ -125,17 +125,14 @@ export default function ManageItemsPage() {
     new Set()
   )
 
-  // Edit dialog state
-  const [editingItem, setEditingItem] = useState<Item | null>(null)
-  const [showEditDialog, setShowEditDialog] = useState(false)
-  const [editFormData, setEditFormData] = useState<UpdateItemRequest>({})
-  const [isUpdating, setIsUpdating] = useState(false)
+
 
   // Delete dialog state
   const [deletingItem, setDeletingItem] = useState<Item | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+  const [isDeleteConflict, setIsDeleteConflict] = useState(false)
 
   // Toggle status state
   const [togglingItemId, setTogglingItemId] = useState<string | null>(null)
@@ -153,6 +150,7 @@ export default function ManageItemsPage() {
       await Promise.all(updatePromises)
 
       // Refresh items and clear selection
+      await new Promise(resolve => setTimeout(resolve, 300))
       await loadItems(false)
       setSelectedItems(new Set())
     } catch (err) {
@@ -171,6 +169,7 @@ export default function ManageItemsPage() {
 
       await Promise.all(updatePromises)
 
+      await new Promise(resolve => setTimeout(resolve, 300))
       await loadItems(false)
       setSelectedItems(new Set())
     } catch (err) {
@@ -181,8 +180,10 @@ export default function ManageItemsPage() {
 
   const handleBulkDelete = () => {
     if (selectedItems.size === 0) return
-    setIsBulkDeleting(true)
-    setShowDeleteDialog(true)
+    setTimeout(() => {
+      setIsBulkDeleting(true)
+      setShowDeleteDialog(true)
+    }, 100)
   }
 
   useEffect(() => {
@@ -233,41 +234,17 @@ export default function ManageItemsPage() {
   }
 
   const handleEdit = (item: Item) => {
-    setEditingItem(item)
-    setEditFormData({
-      name: item.name,
-      description: item.description,
-      quantity: item.quantity,
-      category: item.category,
-      unit: item.unit,
-    })
-    setShowEditDialog(true)
-  }
-
-  const handleUpdateItem = async () => {
-    if (!editingItem) return
-
-    setIsUpdating(true)
-    setError(null)
-
-    try {
-      await itemService.updateItem(editingItem.id, editFormData)
-      setShowEditDialog(false)
-      setEditingItem(null)
-      loadItems(false)
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "حدث خطأ أثناء تحديث المادة"
-      )
-    } finally {
-      setIsUpdating(false)
-    }
+    router.push(`/items/edit/${item.id}`)
   }
 
   const handleDelete = (item: Item) => {
-    setDeletingItem(item)
-    setIsBulkDeleting(false)
-    setShowDeleteDialog(true)
+    // Delay opening dialog to allow dropdown to close properly
+    setTimeout(() => {
+      setDeletingItem(item)
+      setIsBulkDeleting(false)
+      setIsDeleteConflict(false) // Reset conflict state
+      setShowDeleteDialog(true)
+    }, 100)
   }
 
   const handleConfirmDelete = async () => {
@@ -278,19 +255,68 @@ export default function ManageItemsPage() {
       if (isBulkDeleting) {
         const deletePromises = Array.from(selectedItems).map((id) =>
           itemService.deleteItem(id)
+            .then(() => ({ status: 'fulfilled', id }))
+            .catch((err) => ({ status: 'rejected', id, reason: err }))
         )
-        await Promise.all(deletePromises)
-        setSelectedItems(new Set())
+
+        const results = await Promise.all(deletePromises)
+
+        const successful = results.filter((r: any) => r.status === 'fulfilled')
+        const failed = results.filter((r: any) => r.status === 'rejected')
+
+        if (failed.length > 0) {
+          const errorMsg = failed.length === results.length
+            ? "فشل حذف جميع المواد المحددة بسبب ارتباطها بطلبات سابقة"
+            : `تم حذف ${successful.length} مادة، وفشل حذف ${failed.length} مادة لارتباطها بطلبات سابقة`
+          setError(errorMsg)
+        }
+
+        const newSelected = new Set(selectedItems)
+        successful.forEach((r: any) => newSelected.delete(r.id))
+        setSelectedItems(newSelected)
+
         setIsBulkDeleting(false)
+        setShowDeleteDialog(false)
+        await new Promise(resolve => setTimeout(resolve, 300))
+        await loadItems(false)
+
       } else if (deletingItem) {
         await itemService.deleteItem(deletingItem.id)
         setDeletingItem(null)
+        setShowDeleteDialog(false)
+        await new Promise(resolve => setTimeout(resolve, 300))
+        await loadItems(false)
       }
 
+    } catch (err: any) {
+      const isConflict = !isBulkDeleting && (err.status === 409 || err.message.includes('لا يمكن حذف هذه المادة'));
+
+      if (!isConflict) {
+        console.error("Delete error:", err);
+      }
+
+      if (isConflict) {
+        setIsDeleteConflict(true)
+      } else if (!isBulkDeleting) {
+        setError(err instanceof Error ? err.message : "حدث خطأ أثناء حذف المادة")
+        setShowDeleteDialog(false)
+      }
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleDisableFromDialog = async () => {
+    if (!deletingItem) return
+
+    setIsDeleting(true)
+    try {
+      await itemService.toggleItemStatus(deletingItem.id, false)
       setShowDeleteDialog(false)
-      loadItems(false)
+      await new Promise(resolve => setTimeout(resolve, 300))
+      await loadItems(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "حدث خطأ أثناء حذف المادة")
+      setError(err instanceof Error ? err.message : "حدث خطأ أثناء تعطيل المادة")
     } finally {
       setIsDeleting(false)
     }
@@ -302,7 +328,9 @@ export default function ManageItemsPage() {
 
     try {
       await itemService.toggleItemStatus(item.id, !item.isActive)
-      loadItems(false)
+      // Wait for dropdown to close
+      await new Promise(resolve => setTimeout(resolve, 300))
+      await loadItems(false)
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "حدث خطأ أثناء تغيير حالة المادة"
@@ -851,34 +879,34 @@ export default function ManageItemsPage() {
                 selectedStatuses.size > 0 ||
                 selectedCreators.size > 0 ||
                 searchTerm) && (
-                <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <Filter className="h-4 w-4" />
-                  <span>
-                    عرض {filteredItems.length} من {items.length} مادة
-                  </span>
-                  {(selectedCategories.size > 0 ||
-                    selectedWarehouses.size > 0 ||
-                    selectedUnits.size > 0 ||
-                    selectedStatuses.size > 0 ||
-                    selectedCreators.size > 0) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2"
-                      onClick={() => {
-                        setSelectedCategories(new Set())
-                        setSelectedWarehouses(new Set())
-                        setSelectedUnits(new Set())
-                        setSelectedStatuses(new Set())
-                        setSelectedCreators(new Set())
-                      }}
-                    >
-                      <XCircle className="h-3 w-3 ml-1" />
-                      مسح جميع الفلاتر
-                    </Button>
-                  )}
-                </div>
-              )}
+                  <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+                    <Filter className="h-4 w-4" />
+                    <span>
+                      عرض {filteredItems.length} من {items.length} مادة
+                    </span>
+                    {(selectedCategories.size > 0 ||
+                      selectedWarehouses.size > 0 ||
+                      selectedUnits.size > 0 ||
+                      selectedStatuses.size > 0 ||
+                      selectedCreators.size > 0) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2"
+                          onClick={() => {
+                            setSelectedCategories(new Set())
+                            setSelectedWarehouses(new Set())
+                            setSelectedUnits(new Set())
+                            setSelectedStatuses(new Set())
+                            setSelectedCreators(new Set())
+                          }}
+                        >
+                          <XCircle className="h-3 w-3 ml-1" />
+                          مسح جميع الفلاتر
+                        </Button>
+                      )}
+                  </div>
+                )}
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -992,7 +1020,7 @@ export default function ManageItemsPage() {
                                     className={cn(
                                       "h-3.5 w-3.5",
                                       selectedCategories.size > 0 &&
-                                        "text-primary"
+                                      "text-primary"
                                     )}
                                   />
                                 </Button>
@@ -1050,7 +1078,7 @@ export default function ManageItemsPage() {
                                     className={cn(
                                       "h-3.5 w-3.5",
                                       selectedWarehouses.size > 0 &&
-                                        "text-primary"
+                                      "text-primary"
                                     )}
                                   />
                                 </Button>
@@ -1204,7 +1232,7 @@ export default function ManageItemsPage() {
                                     className={cn(
                                       "h-3.5 w-3.5",
                                       selectedStatuses.size > 0 &&
-                                        "text-primary"
+                                      "text-primary"
                                     )}
                                   />
                                 </Button>
@@ -1268,7 +1296,7 @@ export default function ManageItemsPage() {
                                     className={cn(
                                       "h-3.5 w-3.5",
                                       selectedCreators.size > 0 &&
-                                        "text-primary"
+                                      "text-primary"
                                     )}
                                   />
                                 </Button>
@@ -1320,9 +1348,8 @@ export default function ManageItemsPage() {
                       paginatedItems.map((item) => (
                         <TableRow
                           key={item.id}
-                          className={`${!item.isActive ? "opacity-60" : ""} ${
-                            selectedItems.has(item.id) ? "bg-muted" : ""
-                          }`}
+                          className={`${!item.isActive ? "opacity-60" : ""} ${selectedItems.has(item.id) ? "bg-muted" : ""
+                            }`}
                           data-state={
                             selectedItems.has(item.id) ? "selected" : undefined
                           }
@@ -1402,64 +1429,69 @@ export default function ManageItemsPage() {
                             </TableCell>
                           )}
                           <TableCell className="py-2.5">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
+                            {togglingItemId === item.id || (isDeleting && deletingItem?.id === item.id) ? (
+                              <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                              </Button>
+                            ) : (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">فتح القائمة</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="w-[160px]"
                                 >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">فتح القائمة</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="end"
-                                className="w-[160px]"
-                              >
-                                <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => handleToggleStatus(item)}
-                                  disabled={togglingItemId === item.id}
-                                >
-                                  {togglingItemId === item.id ? (
-                                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Power
-                                      className={`ml-2 h-4 w-4 ${
-                                        item.isActive
+                                  <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => handleToggleStatus(item)}
+                                    disabled={togglingItemId === item.id}
+                                  >
+                                    {togglingItemId === item.id ? (
+                                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Power
+                                        className={`ml-2 h-4 w-4 ${item.isActive
                                           ? "text-orange-600"
                                           : "text-green-600"
-                                      }`}
-                                    />
-                                  )}
-                                  {item.isActive ? "تعطيل" : "تفعيل"}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleEdit(item)}
-                                >
-                                  <Edit className="ml-2 h-4 w-4" />
-                                  تعديل
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(item.sku)
-                                  }}
-                                >
-                                  <Copy className="ml-2 h-4 w-4" />
-                                  نسخ الرمز
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => handleDelete(item)}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="ml-2 h-4 w-4" />
-                                  حذف
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                          }`}
+                                      />
+                                    )}
+                                    {item.isActive ? "تعطيل" : "تفعيل"}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleEdit(item)}
+                                  >
+                                    <Edit className="ml-2 h-4 w-4" />
+                                    تعديل
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(item.sku)
+                                    }}
+                                  >
+                                    <Copy className="ml-2 h-4 w-4" />
+                                    نسخ الرمز
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => handleDelete(item)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="ml-2 h-4 w-4" />
+                                    حذف
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))
@@ -1499,105 +1531,31 @@ export default function ManageItemsPage() {
         </CardContent>
       </Card>
 
-      {/* Edit Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>تعديل المادة</DialogTitle>
-            <DialogDescription>تحديث معلومات المادة</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">اسم المادة</Label>
-              <Input
-                id="edit-name"
-                value={editFormData.name || ""}
-                onChange={(e) =>
-                  setEditFormData({ ...editFormData, name: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">الوصف</Label>
-              <Textarea
-                id="edit-description"
-                value={editFormData.description || ""}
-                onChange={(e) =>
-                  setEditFormData({
-                    ...editFormData,
-                    description: e.target.value,
-                  })
-                }
-                rows={3}
-              />
-            </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="edit-quantity">الكمية</Label>
-                <Input
-                  id="edit-quantity"
-                  type="number"
-                  value={editFormData.quantity || 0}
-                  onChange={(e) =>
-                    setEditFormData({
-                      ...editFormData,
-                      quantity: parseInt(e.target.value) || 0,
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-category">الفئة</Label>
-                <Input
-                  id="edit-category"
-                  value={editFormData.category || ""}
-                  onChange={(e) =>
-                    setEditFormData({
-                      ...editFormData,
-                      category: e.target.value,
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-unit">الوحدة</Label>
-                <Input
-                  id="edit-unit"
-                  value={editFormData.unit || ""}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, unit: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowEditDialog(false)}
-              disabled={isUpdating}
-            >
-              إلغاء
-            </Button>
-            <Button onClick={handleUpdateItem} disabled={isUpdating}>
-              {isUpdating && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-              حفظ التغييرات
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
+        <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle>تأكيد الحذف</DialogTitle>
+            <DialogTitle>
+              {isDeleteConflict ? "تعذر حذف المادة" : "تأكيد الحذف"}
+            </DialogTitle>
             <DialogDescription>
-              {isBulkDeleting
-                ? `هل أنت متأكد من حذف ${selectedItems.size} مادة محددة؟`
-                : `هل أنت متأكد من حذف المادة "${deletingItem?.name}"؟`}
-              <br />
-              لا يمكن التراجع عن هذا الإجراء.
+              {isDeleteConflict ? (
+                <>
+                  لا يمكن حذف هذه المادة لأنها مستخدمة في طلبات سابقة.
+                  <br />
+                  يمكنك تعطيلها بدلاً من ذلك لمنع استخدامها في المستقبل.
+                </>
+              ) : (
+                <>
+                  {isBulkDeleting
+                    ? `هل أنت متأكد من حذف ${selectedItems.size} مادة محددة؟`
+                    : `هل أنت متأكد من حذف المادة "${deletingItem?.name}"؟`}
+                  <br />
+                  لا يمكن التراجع عن هذا الإجراء.
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1608,14 +1566,26 @@ export default function ManageItemsPage() {
             >
               إلغاء
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-              حذف
-            </Button>
+            {isDeleteConflict ? (
+              <Button
+                variant="default"
+                onClick={handleDisableFromDialog}
+                disabled={isDeleting}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                {isDeleting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                تعطيل المادة
+              </Button>
+            ) : (
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                حذف
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

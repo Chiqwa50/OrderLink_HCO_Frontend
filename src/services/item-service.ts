@@ -50,7 +50,9 @@ class ItemService {
     const data = await response.json()
 
     if (!response.ok) {
-      throw new Error(data.error || "حدث خطأ في الاتصال")
+      const error = new Error(data.error || "حدث خطأ في الاتصال") as any
+      error.status = response.status
+      throw error
     }
 
     return data as T
