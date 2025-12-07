@@ -22,12 +22,12 @@ export function Footer() {
         <p className="text-xs text-muted-foreground md:text-sm">
           Developed by{" "}
           <a
-            href="https://Smartgalaxy.ly"
+            href="#"
             target="_blank"
             rel="noopener noreferrer"
             className={cn(buttonVariants({ variant: "link" }), "inline p-0")}
           >
-            Smart Galaxy
+            HCO Team
           </a>
         </p>
       </div>
