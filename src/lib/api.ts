@@ -73,6 +73,13 @@ class ApiClient {
   async getMe(): Promise<{ user: LoginResponse["user"] }> {
     return this.request<{ user: LoginResponse["user"] }>("/auth/me")
   }
+
+  async updateMe(data: any): Promise<{ user: LoginResponse["user"] }> {
+    return this.request<{ user: LoginResponse["user"] }>("/auth/me", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL)

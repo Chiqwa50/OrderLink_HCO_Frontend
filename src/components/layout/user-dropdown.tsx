@@ -7,6 +7,7 @@ import { LogOut, User } from "lucide-react"
 import { getInitials } from "@/lib/utils"
 
 import { useAuth } from "@/contexts/auth-context"
+import { useIsDarkMode } from "@/hooks/use-mode"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,6 +23,11 @@ import {
 export function UserDropdown() {
   const { user, logout } = useAuth()
   const router = useRouter()
+  const isDarkMode = useIsDarkMode()
+
+  const avatarSrc = isDarkMode
+    ? "/images/avatars/male-Dark.svg"
+    : "/images/avatars/male-Light.svg"
 
   const handleLogout = () => {
     logout()
@@ -40,7 +46,7 @@ export function UserDropdown() {
           aria-label="User"
         >
           <Avatar className="size-9">
-            <AvatarImage src="/images/avatars/male-01.svg" alt="" />
+            <AvatarImage src={avatarSrc} alt="" />
             <AvatarFallback className="bg-transparent">
               {user?.name && getInitials(user.name)}
             </AvatarFallback>
@@ -50,7 +56,7 @@ export function UserDropdown() {
       <DropdownMenuContent forceMount>
         <DropdownMenuLabel className="flex gap-2">
           <Avatar>
-            <AvatarImage src="/images/avatars/male-01.svg" alt="Avatar" />
+            <AvatarImage src={avatarSrc} alt="Avatar" />
             <AvatarFallback className="bg-transparent">
               {user?.name && getInitials(user.name)}
             </AvatarFallback>

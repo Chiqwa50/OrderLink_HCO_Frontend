@@ -27,6 +27,7 @@ interface AuthContextType {
   isLoading: boolean
   login: (credentials: LoginRequest) => Promise<void>
   logout: () => void
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -36,29 +37,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
-  useEffect(() => {
-    // Check if user is logged in on mount
+  const refreshUser = async () => {
     const token = localStorage.getItem("token")
     if (token) {
-      // Verify token and get user data
-      api
-        .getMe()
-        .then((response: any) => {
-          const userData = {
-            ...response.user,
-            departmentName: response.user.department?.name || null,
-          }
-          setUser(userData)
-        })
-        .catch(() => {
-          localStorage.removeItem("token")
-        })
-        .finally(() => {
-          setIsLoading(false)
-        })
-    } else {
-      setIsLoading(false)
+      try {
+        const response: any = await api.getMe()
+        const userData = {
+          ...response.user,
+          departmentName: response.user.department?.name || null,
+        }
+        setUser(userData)
+      } catch (error) {
+        console.error("Failed to refresh user:", error)
+      }
     }
+  }
+
+  useEffect(() => {
+    refreshUser().finally(() => setIsLoading(false))
   }, [])
 
   const login = async (credentials: LoginRequest) => {
@@ -103,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )
