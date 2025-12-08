@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OrderCard } from "@/components/orders/order-card"
 import { OrdersTable } from "@/components/orders/orders-table"
+import { OrderDetailsSlidePanel } from "@/components/orders/order-details-slide-panel"
 import { DataTablePagination } from "@/components/ui/data-table-pagination"
 
 export default function MyOrdersPage() {
@@ -42,6 +43,9 @@ export default function MyOrdersPage() {
   const [canViewAll, setCanViewAll] = useState(false)
   const [canReceive, setCanReceive] = useState(false)
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(null)
+  const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null)
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const [showDetailsPanel, setShowDetailsPanel] = useState(false)
   const [displayedCount, setDisplayedCount] = useState(9) // عدد البطاقات المعروضة
   const CARDS_PER_PAGE = 9 // عدد البطاقات لكل صفحة
   const [activeTab, setActiveTab] = useState("all") // التبويب النشط
@@ -135,14 +139,23 @@ export default function MyOrdersPage() {
   }
 
   const handleViewDetails = (order: Order) => {
-    router.push(`/orders/my-orders/${order.id}`)
+    setSelectedOrderId(order.id)
+    setShowDetailsPanel(true)
   }
 
   const handleDownloadPDF = async (order: Order) => {
     try {
+      setDownloadingOrderId(order.id)
       await pdfService.downloadOrderPDF(order)
     } catch (err) {
       console.error("Error downloading PDF:", err)
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل تحميل ملف PDF",
+      })
+    } finally {
+      setDownloadingOrderId(null)
     }
   }
 
@@ -328,10 +341,11 @@ export default function MyOrdersPage() {
                     <OrderCard
                       key={order.id}
                       order={order}
-                      isProcessing={processingOrderId === order.id}
                       onView={handleViewDetails}
+                      onDownloadPDF={handleDownloadPDF}
                       onDelete={() => setOrderToDelete(order)}
                       onReceive={canReceive && order.status === "READY" ? handleReceive : undefined}
+                      isProcessing={processingOrderId === order.id || downloadingOrderId === order.id}
                     />
                   ))
                 )}
@@ -420,8 +434,9 @@ export default function MyOrdersPage() {
                           <OrderCard
                             key={order.id}
                             order={order}
-                            isProcessing={processingOrderId === order.id}
+                            isProcessing={processingOrderId === order.id || downloadingOrderId === order.id}
                             onView={handleViewDetails}
+                            onDownloadPDF={handleDownloadPDF}
                             onDelete={() => setOrderToDelete(order)}
                             onReceive={canReceive && order.status === "READY" ? handleReceive : undefined}
                           />
@@ -518,6 +533,12 @@ export default function MyOrdersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <OrderDetailsSlidePanel
+        orderId={selectedOrderId}
+        open={showDetailsPanel}
+        onOpenChange={setShowDetailsPanel}
+      />
     </div>
   )
 }

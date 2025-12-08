@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 import {
   Calendar,
   CheckCircle,
@@ -83,6 +85,18 @@ export function OrderCard({
   onReceive,
   className,
 }: OrderCardProps) {
+  const [isDownloading, setIsDownloading] = useState(false)
+
+  const handleDownload = async () => {
+    if (!onDownloadPDF) return
+    try {
+      setIsDownloading(true)
+      await onDownloadPDF(order)
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
   return (
     <Card
       className={cn(
@@ -208,11 +222,15 @@ export function OrderCard({
               عرض التفاصيل
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => onDownloadPDF?.(order)}
-              disabled={isProcessing}
+              onClick={handleDownload}
+              disabled={isProcessing || isDownloading}
             >
-              <Download className="ml-2 h-4 w-4" />
-              تحميل PDF
+              {isDownloading ? (
+                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="ml-2 h-4 w-4" />
+              )}
+              {isDownloading ? "جاري التحميل..." : "تحميل PDF"}
             </DropdownMenuItem>
 
             {/* إجراءات المدير */}

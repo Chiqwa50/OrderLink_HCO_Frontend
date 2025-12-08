@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { orderService } from "@/services/order-service"
+import { pdfService } from "@/services/pdf-service"
 import {
   ArrowUpDown,
   CheckCircle2,
@@ -67,6 +68,7 @@ export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null)
   const [showDetailsPanel, setShowDetailsPanel] = useState(false)
   const [viewMode, setViewMode] = useResponsiveView()
 
@@ -138,12 +140,21 @@ export default function OrderHistoryPage() {
     setShowDetailsPanel(true)
   }
 
-  // const handleDownloadPDF = async (order: Order) => {
-  //   toast({
-  //     title: "قريباً",
-  //     description: "ميزة تحميل PDF ستكون متاحة قريباً",
-  //   })
-  // }
+  const handleDownloadPDF = async (order: Order) => {
+    try {
+      setDownloadingOrderId(order.id)
+      await pdfService.downloadOrderPDF(order)
+    } catch (err) {
+      console.error("Error downloading PDF:", err)
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل تحميل ملف PDF",
+      })
+    } finally {
+      setDownloadingOrderId(null)
+    }
+  }
 
   // const handleExportAll = () => {
   //   toast({
@@ -600,9 +611,14 @@ export default function OrderHistoryPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => toast({ title: "قريباً", description: "ميزة تحميل PDF ستكون متاحة قريباً" })}
+                                  onClick={() => handleDownloadPDF(order)}
+                                  disabled={downloadingOrderId === order.id}
                                 >
-                                  <Download className="h-4 w-4" />
+                                  {downloadingOrderId === order.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Download className="h-4 w-4" />
+                                  )}
                                 </Button>
                               </div>
                             </TableCell>
@@ -627,9 +643,8 @@ export default function OrderHistoryPage() {
                         key={order.id}
                         order={order}
                         onView={handleViewOrder}
-                        onDownloadPDF={async () => {
-                          toast({ title: "قريباً", description: "ميزة تحميل PDF ستكون متاحة قريباً" })
-                        }}
+                        onDownloadPDF={handleDownloadPDF}
+                        isProcessing={downloadingOrderId === order.id}
                       />
                     ))
                   )}

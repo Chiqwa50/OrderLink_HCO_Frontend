@@ -56,6 +56,7 @@ export function OrdersTable({
 }: OrdersTableProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null)
+  const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null)
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
@@ -67,6 +68,16 @@ export function OrdersTable({
 
   const handleDeleteClick = (order: Order) => {
     setOrderToDelete(order)
+  }
+
+  const handleDownloadClick = async (order: Order) => {
+    if (!onDownloadPDF) return
+    try {
+      setDownloadingOrderId(order.id)
+      await onDownloadPDF(order)
+    } finally {
+      setDownloadingOrderId(null)
+    }
   }
 
   const confirmDelete = () => {
@@ -192,10 +203,15 @@ export function OrdersTable({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onDownloadPDF(order)}
+                          onClick={() => handleDownloadClick(order)}
                           title="تحميل PDF"
+                          disabled={downloadingOrderId === order.id}
                         >
-                          <Download className="h-4 w-4" />
+                          {downloadingOrderId === order.id ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
                         </Button>
                       )}
                       {onEditOrder &&

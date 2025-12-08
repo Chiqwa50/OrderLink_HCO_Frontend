@@ -205,10 +205,13 @@ export default function ManageOrdersPage() {
   }, [])
 
   const handleDownloadPDF = useCallback(async (order: Order) => {
+    setProcessingOrderId(order.id)
     try {
       await pdfService.downloadOrderPDF(order)
     } catch (err) {
       console.error("Error downloading PDF:", err)
+    } finally {
+      setProcessingOrderId(null)
     }
   }, [])
 
@@ -1012,8 +1015,14 @@ export default function ManageOrdersPage() {
                                     onClick={() => handleDownloadPDF(order)}
                                     disabled={processingOrderId === order.id}
                                   >
-                                    <Download className="ml-2 h-4 w-4" />
-                                    تحميل PDF
+                                    {processingOrderId === order.id ? (
+                                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Download className="ml-2 h-4 w-4" />
+                                    )}
+                                    {processingOrderId === order.id
+                                      ? "جاري التحميل..."
+                                      : "تحميل PDF"}
                                   </DropdownMenuItem>
 
                                   {/* إجراءات المدير ومسؤول المستودع للطلبات قيد المراجعة */}

@@ -109,6 +109,10 @@ const actionLabels: Record<
   },
 }
 
+import { pdfService } from "@/services/pdf-service"
+
+// ... imports
+
 export function OrderDetailsSlidePanel({
   orderId,
   open,
@@ -117,6 +121,7 @@ export function OrderDetailsSlidePanel({
   const [order, setOrder] = useState<Order | null>(null)
   const [preparationLogs, setPreparationLogs] = useState<PreparationLog[]>([])
   const [loading, setLoading] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   useEffect(() => {
     if (open && orderId) {
@@ -151,31 +156,15 @@ export function OrderDetailsSlidePanel({
   }
 
   const handleDownloadPDF = async () => {
-    if (!orderId) return
+    if (!order) return
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/orders/${orderId}/pdf`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      )
-
-      if (!response.ok) throw new Error("فشل تحميل PDF")
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `order-${order?.orderNumber || orderId}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      setIsDownloading(true)
+      await pdfService.downloadOrderPDF(order)
     } catch (error) {
       console.error("Error downloading PDF:", error)
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -210,9 +199,16 @@ export function OrderDetailsSlidePanel({
                     size="sm"
                     onClick={handleDownloadPDF}
                     className="gap-2"
+                    disabled={isDownloading}
                   >
-                    <Download className="h-4 w-4" />
-                    <span className="hidden sm:inline">تحميل PDF</span>
+                    {isDownloading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                    <span className="hidden sm:inline">
+                      {isDownloading ? "جاري التحميل..." : "تحميل PDF"}
+                    </span>
                   </Button>
                   <Button
                     variant="ghost"
