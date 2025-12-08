@@ -86,13 +86,13 @@ export function OrderCard({
   return (
     <Card
       className={cn(
-        "overflow-hidden hover:shadow-md transition-shadow",
+        "overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border-muted/60",
         className
       )}
     >
       <CardHeader className="pb-3 space-y-3">
         {/* Title - Full width */}
-        <CardTitle className="text-base sm:text-lg md:text-xl">
+        <CardTitle className="text-lg sm:text-xl font-bold">
           طلبية رقم {order.orderNumber}
         </CardTitle>
 
@@ -101,7 +101,7 @@ export function OrderCard({
           <div className="flex flex-wrap items-center gap-2">
             <OrderStatusBadge status={order.status} className="self-start" />
           </div>
-          <CardDescription className="flex flex-col gap-1.5 text-xs sm:text-sm">
+          <CardDescription className="flex flex-col gap-2 text-sm">
             <span className="flex flex-col gap-0.5">
               <span className="flex items-center gap-2">
                 <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -149,7 +149,7 @@ export function OrderCard({
             {order.items.slice(0, 3).map((item, index) => (
               <div
                 key={item.id || index}
-                className="flex justify-between items-center text-sm bg-muted/50 rounded-md p-2"
+                className="flex justify-between items-center text-sm bg-muted/40 rounded-lg p-2.5"
               >
                 <span className="font-medium truncate flex-1">
                   {item.itemName}

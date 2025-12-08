@@ -666,15 +666,18 @@ export default function ManageItemsPage() {
   }, [items, selectedItems])
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto p-2 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">إدارة المواد</h1>
           <p className="text-muted-foreground">
             إدارة قائمة المواد والمخزون في النظام
           </p>
         </div>
-        <Button onClick={() => router.push("/items/add")}>
+        <Button
+          onClick={() => router.push("/items/add")}
+          className="w-full md:w-auto"
+        >
           <Plus className="ml-2 h-4 w-4" />
           إضافة مادة
         </Button>
@@ -687,7 +690,7 @@ export default function ManageItemsPage() {
       )}
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="hidden md:grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">إجمالي المواد</CardTitle>
@@ -840,15 +843,7 @@ export default function ManageItemsPage() {
                 </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button
-              variant="outline"
-              onClick={() => handleSearch()}
-              disabled={isRefreshing}
-            >
-              <Search
-                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-            </Button>
+
             <Button
               variant="outline"
               onClick={() => loadItems(false)}
@@ -911,7 +906,7 @@ export default function ManageItemsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="h-10 w-[50px] text-center">
+                      <TableHead className="h-10 text-center px-6">
                         <div className="flex items-center justify-center">
                           <Checkbox
                             checked={isAllSelected}
@@ -928,7 +923,7 @@ export default function ManageItemsPage() {
                       {visibleColumns.has("sku") && (
                         <TableHead className="h-10 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <span>رمز المادة</span>
+                            <span className="whitespace-nowrap">رمز المادة</span>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
@@ -1276,7 +1271,7 @@ export default function ManageItemsPage() {
                       {visibleColumns.has("creator") && (
                         <TableHead className="h-10 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <span>أنشئ من قبل</span>
+                            <span className="whitespace-nowrap">من قبل</span>
                             {selectedCreators.size > 0 && (
                               <Badge
                                 variant="secondary"
@@ -1354,7 +1349,7 @@ export default function ManageItemsPage() {
                             selectedItems.has(item.id) ? "selected" : undefined
                           }
                         >
-                          <TableCell className="py-2.5 text-center">
+                          <TableCell className="text-center px-6">
                             <Checkbox
                               checked={selectedItems.has(item.id)}
                               onCheckedChange={(checked) =>
@@ -1364,23 +1359,23 @@ export default function ManageItemsPage() {
                             />
                           </TableCell>
                           {visibleColumns.has("sku") && (
-                            <TableCell className="font-mono text-xs py-2.5 text-center">
+                            <TableCell className="font-mono text-sm md:text-xs py-3 md:py-2.5 text-center whitespace-nowrap">
                               {item.sku}
                             </TableCell>
                           )}
                           {visibleColumns.has("name") && (
-                            <TableCell className="font-medium py-2.5 text-center">
+                            <TableCell className="font-medium text-base md:text-sm py-3 md:py-2.5 text-center whitespace-nowrap">
                               {item.name}
                             </TableCell>
                           )}
                           {visibleColumns.has("category") && (
-                            <TableCell className="py-2.5 text-center">
+                            <TableCell className="text-sm md:text-base py-3 md:py-2.5 text-center whitespace-nowrap">
                               {item.category || "-"}
                             </TableCell>
                           )}
                           {visibleColumns.has("warehouse") && (
-                            <TableCell className="py-2.5 text-center">
-                              <span className="text-xs">
+                            <TableCell className="py-3 md:py-2.5 text-center whitespace-nowrap">
+                              <span className="text-sm md:text-xs">
                                 {item.warehouse?.name || "-"}
                               </span>
                               {item.warehouse?.code && (
@@ -1391,29 +1386,29 @@ export default function ManageItemsPage() {
                             </TableCell>
                           )}
                           {visibleColumns.has("quantity") && (
-                            <TableCell className="py-2.5 text-center">
+                            <TableCell className="text-sm md:text-base py-3 md:py-2.5 text-center whitespace-nowrap">
                               {item.quantity}
                             </TableCell>
                           )}
                           {visibleColumns.has("unit") && (
-                            <TableCell className="py-2.5 text-center">
+                            <TableCell className="text-sm md:text-base py-3 md:py-2.5 text-center whitespace-nowrap">
                               {item.unit || "-"}
                             </TableCell>
                           )}
                           {visibleColumns.has("isActive") && (
-                            <TableCell className="py-2.5 text-center">
+                            <TableCell className="py-3 md:py-2.5 text-center whitespace-nowrap">
                               <div className="flex items-center justify-center gap-1.5">
                                 {item.isActive ? (
                                   <>
                                     <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-                                    <span className="text-xs text-green-600 font-medium">
+                                    <span className="text-sm md:text-xs text-green-600 font-medium">
                                       نشط
                                     </span>
                                   </>
                                 ) : (
                                   <>
                                     <XCircle className="h-3.5 w-3.5 text-gray-400" />
-                                    <span className="text-xs text-gray-500">
+                                    <span className="text-sm md:text-xs text-gray-500">
                                       غير نشط
                                     </span>
                                   </>
@@ -1422,8 +1417,8 @@ export default function ManageItemsPage() {
                             </TableCell>
                           )}
                           {visibleColumns.has("creator") && (
-                            <TableCell className="py-2.5 text-center">
-                              <span className="text-xs text-muted-foreground">
+                            <TableCell className="py-3 md:py-2.5 text-center whitespace-nowrap">
+                              <span className="text-sm md:text-xs text-muted-foreground">
                                 {item.creator?.name || "-"}
                               </span>
                             </TableCell>

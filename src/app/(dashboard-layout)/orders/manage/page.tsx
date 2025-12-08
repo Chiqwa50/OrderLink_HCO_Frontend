@@ -391,45 +391,130 @@ export default function ManageOrdersPage() {
     }
   }, [orders, user?.role, warehouseRestrictions])
 
-  // استخراج القوائم الفريدة للفلاتر
-  const uniqueDepartments = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          orders.map((o) => [
-            o.departmentId,
-            { id: o.departmentId, name: o.departmentName },
-          ])
-        ).values()
-      ),
-    [orders]
+  // Helper function to get filtered orders excluding a specific field
+  const getFilteredOrdersForField = useCallback(
+    (excludeField: keyof typeof filters) => {
+      return orders.filter((order) => {
+        // إزالة الطلبات المكتملة والمرفوضة من صفحة الإدارة
+        if (["DELIVERED", "REJECTED"].includes(order.status)) {
+          return false
+        }
+
+        // فلترة حسب دور المستخدم
+        if (user?.role === "WAREHOUSE") {
+          const allowedStatuses = ["APPROVED", "PREPARING", "READY"]
+          if (warehouseRestrictions.canViewPendingOrders) {
+            allowedStatuses.push("PENDING")
+          }
+          if (!allowedStatuses.includes(order.status)) {
+            return false
+          }
+        }
+
+        // Search filter
+        const matchesSearch =
+          order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          order.departmentName
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          order.warehouseName.toLowerCase().includes(searchTerm.toLowerCase())
+
+        if (!matchesSearch) return false
+
+        // Status filter
+        if (
+          excludeField !== "status" &&
+          filters.status &&
+          filters.status !== "ALL"
+        ) {
+          if (order.status !== filters.status) return false
+        }
+
+        // Department filter
+        if (
+          excludeField !== "departmentId" &&
+          filters.departmentId &&
+          filters.departmentId !== "ALL"
+        ) {
+          if (order.departmentId !== filters.departmentId) return false
+        }
+
+        // Warehouse filter
+        if (
+          excludeField !== "warehouseId" &&
+          filters.warehouseId &&
+          filters.warehouseId !== "ALL"
+        ) {
+          if (order.warehouseId !== filters.warehouseId) return false
+        }
+
+        // User filter
+        if (
+          excludeField !== "createdBy" &&
+          filters.createdBy &&
+          filters.createdBy !== "ALL"
+        ) {
+          if (order.createdBy !== filters.createdBy) return false
+        }
+
+        // Date from filter
+        if (excludeField !== "dateFrom" && filters.dateFrom) {
+          const orderDate = new Date(order.createdAt)
+          const fromDate = new Date(filters.dateFrom)
+          fromDate.setHours(0, 0, 0, 0)
+          if (orderDate < fromDate) return false
+        }
+
+        // Date to filter
+        if (excludeField !== "dateTo" && filters.dateTo) {
+          const orderDate = new Date(order.createdAt)
+          const toDate = new Date(filters.dateTo)
+          toDate.setHours(23, 59, 59, 999)
+          if (orderDate > toDate) return false
+        }
+
+        return true
+      })
+    },
+    [orders, searchTerm, filters, user, warehouseRestrictions]
   )
 
-  const uniqueWarehouses = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          orders.map((o) => [
-            o.warehouseId,
-            { id: o.warehouseId, name: o.warehouseName },
-          ])
-        ).values()
-      ),
-    [orders]
-  )
+  // استخراج القوائم الفريدة للفلاتر (Dynamic)
+  const uniqueDepartments = useMemo(() => {
+    const filtered = getFilteredOrdersForField("departmentId")
+    return Array.from(
+      new Map(
+        filtered.map((o) => [
+          o.departmentId,
+          { id: o.departmentId, name: o.departmentName },
+        ])
+      ).values()
+    )
+  }, [getFilteredOrdersForField])
 
-  const uniqueUsers = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          orders.map((o) => [
-            o.createdBy,
-            { id: o.createdBy, name: o.createdByName },
-          ])
-        ).values()
-      ),
-    [orders]
-  )
+  const uniqueWarehouses = useMemo(() => {
+    const filtered = getFilteredOrdersForField("warehouseId")
+    return Array.from(
+      new Map(
+        filtered.map((o) => [
+          o.warehouseId,
+          { id: o.warehouseId, name: o.warehouseName },
+        ])
+      ).values()
+    )
+  }, [getFilteredOrdersForField])
+
+  const uniqueUsers = useMemo(() => {
+    const filtered = getFilteredOrdersForField("createdBy")
+    return Array.from(
+      new Map(
+        filtered.map((o) => [
+          o.createdBy,
+          { id: o.createdBy, name: o.createdByName },
+        ])
+      ).values()
+    )
+  }, [getFilteredOrdersForField])
 
   // Memoized filtered items
   const filteredOrders = useMemo(() => {
@@ -544,18 +629,42 @@ export default function ManageOrdersPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-2 md:p-6 space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">إدارة الطلبيات</h2>
-          <p className="text-muted-foreground">
-            مراجعة وتجهيز الطلبيات الواردة من الأقسام
-          </p>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start justify-between w-full md:w-auto">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">إدارة الطلبيات</h2>
+            <p className="text-muted-foreground">
+              مراجعة وتجهيز الطلبيات الواردة من الأقسام
+            </p>
+          </div>
+
+          {/* View Mode Toggle - Mobile (Visible only on mobile) */}
+          <div className="flex md:hidden items-center border rounded-md bg-background">
+            <Button
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              className="rounded-l-md rounded-r-none h-8 px-2"
+            >
+              <TableIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("cards")}
+              className="rounded-r-md rounded-l-none h-8 px-2"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {/* View Mode Toggle */}
-          <div className="flex items-center border rounded-md">
+
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          {/* View Mode Toggle - Desktop (Hidden on mobile) */}
+          <div className="hidden md:flex items-center border rounded-md">
             <Button
               variant={viewMode === "table" ? "secondary" : "ghost"}
               size="sm"
@@ -576,18 +685,16 @@ export default function ManageOrdersPage() {
             </Button>
           </div>
 
-          {/* Refresh Button */}
+          {/* Refresh Button - Full width on mobile */}
           <Button
             onClick={() => loadOrders(false)}
-            variant="outline"
-            size="sm"
             disabled={isRefreshing}
-            className="h-9"
+            className="w-full md:w-auto"
           >
             <RefreshCw
               className={`ml-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
             />
-            <span className="hidden sm:inline">تحديث</span>
+            <span>تحديث البيانات</span>
           </Button>
         </div>
       </div>
@@ -598,8 +705,8 @@ export default function ManageOrdersPage() {
         </Alert>
       )}
 
-      {/* إحصائيات سريعة */}
-      <div className="relative">
+      {/* إحصائيات سريعة - مخفية في الجوال */}
+      <div className="hidden md:block relative">
         {/* Carousel wrapper for mobile - one card at a time */}
         <div className="md:grid md:gap-4 md:grid-cols-3 overflow-x-auto md:overflow-x-visible scrollbar-hide snap-x snap-mandatory">
           <div className="flex md:contents gap-4 pb-2 md:pb-0 px-1 md:px-0">
@@ -815,34 +922,34 @@ export default function ManageOrdersPage() {
                       ) : (
                         paginatedOrders.map((order) => (
                           <TableRow key={order.id}>
-                            <TableCell className="font-mono text-[10px] sm:text-xs py-2.5 text-center whitespace-nowrap">
+                            <TableCell className="font-mono text-sm sm:text-base py-4 text-center whitespace-nowrap">
                               {order.orderNumber}
                             </TableCell>
-                            <TableCell className="py-2.5 text-center">
-                              <div className="flex flex-col items-center">
-                                <span className="font-medium text-xs sm:text-sm whitespace-nowrap">
+                            <TableCell className="py-4 text-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="font-medium text-sm sm:text-base whitespace-nowrap">
                                   {order.departmentName}
                                 </span>
                                 {order.createdByName && (
-                                  <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
+                                  <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                                     {order.createdByName}
                                   </span>
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="py-2.5 text-center">
-                              <div className="flex flex-col items-center">
-                                <span className="font-medium text-xs sm:text-sm whitespace-nowrap">
+                            <TableCell className="py-4 text-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="font-medium text-sm sm:text-base whitespace-nowrap">
                                   {order.warehouseName}
                                 </span>
                                 {order.warehouseCode && (
-                                  <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
+                                  <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                                     ({order.warehouseCode})
                                   </span>
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="py-2.5 text-center text-xs sm:text-sm">
+                            <TableCell className="py-4 text-center text-sm sm:text-base">
                               <div className="flex flex-col items-center gap-1">
                                 <span>{order.items.length}</span>
                                 {/* Partial Preparation Badge */}
@@ -857,13 +964,13 @@ export default function ManageOrdersPage() {
                                   )}
                               </div>
                             </TableCell>
-                            <TableCell className="py-2.5 text-center">
-                              <span className="text-[10px] sm:text-xs whitespace-nowrap">
+                            <TableCell className="py-4 text-center">
+                              <span className="text-sm sm:text-base whitespace-nowrap">
                                 {formatDateTime(order.createdAt)}
                               </span>
                             </TableCell>
-                            <TableCell className="py-2.5 text-center">
-                              <OrderStatusBadge status={order.status} />
+                            <TableCell className="py-4 text-center">
+                              <OrderStatusBadge status={order.status} className="text-xs sm:text-sm px-2 py-1" />
                             </TableCell>
                             <TableCell className="py-2.5">
                               <DropdownMenu modal={false}>
@@ -871,7 +978,7 @@ export default function ManageOrdersPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8"
+                                    className="h-10 w-10"
                                     disabled={processingOrderId === order.id}
                                   >
                                     {processingOrderId === order.id ? (
