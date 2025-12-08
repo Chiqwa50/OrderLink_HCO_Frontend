@@ -163,6 +163,7 @@ export interface Order {
     hasPartialPreparation: boolean
   }
   preparationLogs?: PreparationLog[]
+  history?: OrderHistory[]
 }
 
 export interface OrderHistory {
@@ -170,9 +171,15 @@ export interface OrderHistory {
   orderId: string
   status: OrderStatus
   changedBy: string
-  changedByName: string
-  changedAt: string
+  changedByName?: string // Optional as it might come from the user object
+  changedAt?: string // Backend uses timestamp
+  timestamp?: string // Backend uses timestamp
   notes?: string
+  user?: {
+    id: string
+    name: string
+    role: UserRole
+  }
 }
 
 export interface CreateOrderRequest {

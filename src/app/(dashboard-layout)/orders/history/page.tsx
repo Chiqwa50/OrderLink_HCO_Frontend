@@ -577,8 +577,8 @@ export default function OrderHistoryPage() {
                               {formatDateTime(order.createdAt)}
                             </TableCell>
                             <TableCell className="text-center text-sm sm:text-base py-4 whitespace-nowrap">
-                              {order.status === "DELIVERED" && order.deliveredAt
-                                ? formatDateTime(order.deliveredAt)
+                              {order.status === "DELIVERED"
+                                ? formatDateTime(order.deliveredAt || order.updatedAt)
                                 : order.status === "REJECTED"
                                   ? "-"
                                   : "قيد المعالجة"}
