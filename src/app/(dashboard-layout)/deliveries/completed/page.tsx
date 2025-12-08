@@ -18,10 +18,15 @@ import {
 } from "@/components/ui/card"
 import { DeliveriesTable } from "@/components/orders/deliveries-table"
 
+import { useResponsiveView } from "@/hooks/use-responsive-view"
+import { LayoutGrid, LayoutList } from "lucide-react"
+import { OrderCard } from "@/components/orders/order-card"
+
 export default function CompletedDeliveriesPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useResponsiveView()
 
   useEffect(() => {
     loadOrders()
@@ -78,16 +83,63 @@ export default function CompletedDeliveriesPage() {
   return (
     <div className="container mx-auto p-2 md:p-6 space-y-4 md:space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">سجل التوصيلات</h2>
-          <p className="text-muted-foreground">
-            سجل توصيلات السائقين
-          </p>
+        <div className="flex items-start justify-between w-full md:w-auto">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">سجل التوصيلات</h2>
+            <p className="text-muted-foreground">
+              سجل توصيلات السائقين
+            </p>
+          </div>
+
+          {/* View Mode Toggle - Mobile */}
+          <div className="flex md:hidden items-center border rounded-md bg-background">
+            <Button
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              className="rounded-l-md rounded-r-none h-8 px-2"
+            >
+              <LayoutList className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("cards")}
+              className="rounded-r-md rounded-l-none h-8 px-2"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <Button onClick={loadOrders} className="w-full md:w-auto">
-          <RefreshCw className="ml-2 h-4 w-4" />
-          تحديث
-        </Button>
+
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          {/* View Mode Toggle - Desktop */}
+          <div className="hidden md:flex items-center border rounded-md">
+            <Button
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              className="rounded-l-md rounded-r-none h-9"
+            >
+              <LayoutList className="h-4 w-4 ml-1" />
+              <span className="hidden sm:inline">جدول</span>
+            </Button>
+            <Button
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("cards")}
+              className="rounded-r-md rounded-l-none h-9"
+            >
+              <LayoutGrid className="h-4 w-4 ml-1" />
+              <span className="hidden sm:inline">بطاقات</span>
+            </Button>
+          </div>
+
+          <Button onClick={loadOrders} className="w-full md:w-auto">
+            <RefreshCw className="ml-2 h-4 w-4" />
+            تحديث
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -121,8 +173,19 @@ export default function CompletedDeliveriesPage() {
             <div className="text-center py-12">
               <p className="text-muted-foreground">لا توجد توصيلات مكتملة</p>
             </div>
-          ) : (
+          ) : viewMode === "table" ? (
             <DeliveriesTable orders={orders} onViewOrder={(order) => console.log("View order", order)} />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {orders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onView={() => console.log("View order", order)}
+                  onDownloadPDF={() => handleDownloadPDF(order)}
+                />
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>

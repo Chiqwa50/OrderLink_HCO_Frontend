@@ -181,13 +181,15 @@ function DepartmentRow({
   )
 }
 
+import { useResponsiveView } from "@/hooks/use-responsive-view"
+
 export default function ManageDepartmentsPage() {
   const router = useRouter()
   const [departments, setDepartments] = useState<Department[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [viewMode, setViewMode] = useState<"table" | "card">("table")
+  const [viewMode, setViewMode] = useResponsiveView()
 
   useEffect(() => {
     loadDepartments()
@@ -286,9 +288,9 @@ export default function ManageDepartmentsPage() {
               <LayoutList className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === "card" ? "secondary" : "ghost"}
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
               size="sm"
-              onClick={() => setViewMode("card")}
+              onClick={() => setViewMode("cards")}
               className="rounded-r-md rounded-l-none h-8 px-2"
             >
               <LayoutGrid className="h-4 w-4" />
@@ -309,9 +311,9 @@ export default function ManageDepartmentsPage() {
               <span className="hidden sm:inline">جدول</span>
             </Button>
             <Button
-              variant={viewMode === "card" ? "secondary" : "ghost"}
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
               size="sm"
-              onClick={() => setViewMode("card")}
+              onClick={() => setViewMode("cards")}
               className="rounded-r-md rounded-l-none h-9"
             >
               <LayoutGrid className="h-4 w-4 ml-1" />

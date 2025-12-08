@@ -75,6 +75,8 @@ import { OrderStatusBadge } from "@/components/orders/order-status-badge"
  * صفحة إدارة الطلبيات - OOP Pattern
  * توفر واجهة محسّنة لإدارة الطلبيات مع pagination وإجراءات متقدمة
  */
+import { useResponsiveView } from "@/hooks/use-responsive-view"
+
 export default function ManageOrdersPage() {
   const router = useRouter()
   const { user } = useAuth() // استخدام AuthContext
@@ -108,7 +110,7 @@ export default function ManageOrdersPage() {
   )
 
   // View mode state (table or cards)
-  const [viewMode, setViewMode] = useState<"table" | "cards">("table")
+  const [viewMode, setViewMode] = useResponsiveView()
 
   // Order details slide panel state
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)

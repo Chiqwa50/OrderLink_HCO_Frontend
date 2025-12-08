@@ -78,6 +78,8 @@ const warehouseTypeColors: Record<WType, string> = {
   general: "bg-gray-100 text-gray-800",
 }
 
+import { useResponsiveView } from "@/hooks/use-responsive-view"
+
 export default function ManageWarehousesPage() {
   const router = useRouter()
   const [warehouses, setWarehouses] = useState<WarehouseType[]>([])
@@ -85,7 +87,7 @@ export default function ManageWarehousesPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState<WType | "all">("all")
-  const [viewMode, setViewMode] = useState<"table" | "card">("table")
+  const [viewMode, setViewMode] = useResponsiveView()
 
   // Edit dialog state
   const [editingWarehouse, setEditingWarehouse] =
@@ -215,9 +217,9 @@ export default function ManageWarehousesPage() {
               <LayoutList className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === "card" ? "secondary" : "ghost"}
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
               size="sm"
-              onClick={() => setViewMode("card")}
+              onClick={() => setViewMode("cards")}
               className="rounded-r-md rounded-l-none h-8 px-2"
             >
               <LayoutGrid className="h-4 w-4" />
@@ -238,9 +240,9 @@ export default function ManageWarehousesPage() {
               <span className="hidden sm:inline">جدول</span>
             </Button>
             <Button
-              variant={viewMode === "card" ? "secondary" : "ghost"}
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
               size="sm"
-              onClick={() => setViewMode("card")}
+              onClick={() => setViewMode("cards")}
               className="rounded-r-md rounded-l-none h-9"
             >
               <LayoutGrid className="h-4 w-4 ml-1" />

@@ -60,13 +60,15 @@ import { OrderDetailsSlidePanel } from "@/components/orders/order-details-slide-
 import { OrderStatusBadge } from "@/components/orders/order-status-badge"
 import { OrderCard } from "@/components/orders/order-card"
 
+import { useResponsiveView } from "@/hooks/use-responsive-view"
+
 export default function OrderHistoryPage() {
   const { toast } = useToast()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [showDetailsPanel, setShowDetailsPanel] = useState(false)
-  const [viewMode, setViewMode] = useState<"table" | "cards">("table")
+  const [viewMode, setViewMode] = useResponsiveView()
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)

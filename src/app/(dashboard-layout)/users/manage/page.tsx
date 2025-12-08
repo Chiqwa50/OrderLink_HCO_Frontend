@@ -74,6 +74,8 @@ const roleColors: Record<string, string> = {
   DRIVER: "bg-yellow-100 text-yellow-800",
 }
 
+import { useResponsiveView } from "@/hooks/use-responsive-view"
+
 export default function ManageUsersPage() {
   const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
@@ -81,7 +83,7 @@ export default function ManageUsersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [viewMode, setViewMode] = useState<"table" | "card">("table")
+  const [viewMode, setViewMode] = useResponsiveView()
 
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -269,9 +271,9 @@ export default function ManageUsersPage() {
               <LayoutList className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === "card" ? "secondary" : "ghost"}
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
               size="sm"
-              onClick={() => setViewMode("card")}
+              onClick={() => setViewMode("cards")}
               className="rounded-r-md rounded-l-none h-8 px-2"
             >
               <LayoutGrid className="h-4 w-4" />
@@ -292,9 +294,9 @@ export default function ManageUsersPage() {
               <span className="hidden sm:inline">جدول</span>
             </Button>
             <Button
-              variant={viewMode === "card" ? "secondary" : "ghost"}
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
               size="sm"
-              onClick={() => setViewMode("card")}
+              onClick={() => setViewMode("cards")}
               className="rounded-r-md rounded-l-none h-9"
             >
               <LayoutGrid className="h-4 w-4 ml-1" />
