@@ -1,6 +1,5 @@
 "use client"
-
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -12,8 +11,66 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
+import { useAuth } from "@/contexts/auth-context"
+import { api } from "@/lib/api"
 
 export default function ProfilePage() {
+  const { user } = useAuth()
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false)
+
+  const getRoleName = (role: string) => {
+    switch (role) {
+      case "ADMIN":
+        return "مدير النظام"
+      case "DEPARTMENT":
+        return "مشرف قسم"
+      case "WAREHOUSE":
+        return "مشرف مستودع"
+      case "DRIVER":
+        return "سائق"
+      default:
+        return role
+    }
+  }
+
+  const handleUpdatePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error("جميع الحقول مطلوبة")
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("كلمة المرور الجديدة غير متطابقة")
+      return
+    }
+
+    setIsPasswordLoading(true)
+    try {
+      await api.updateMe({
+        currentPassword,
+        newPassword,
+      })
+
+      toast.success("تم تحديث كلمة المرور بنجاح")
+      setCurrentPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error.message || "حدث خطأ أثناء تحديث كلمة المرور")
+    } finally {
+      setIsPasswordLoading(false)
+    }
+  }
+
+  if (!user) {
+    return <div>جاري التحميل...</div>
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between space-y-2">
@@ -23,35 +80,26 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle>المعلومات الشخصية</CardTitle>
-            <CardDescription>قم بتحديث معلومات حسابك</CardDescription>
+            <CardDescription>معلومات حسابك (للقراءة فقط)</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarFallback className="text-2xl">أح</AvatarFallback>
-              </Avatar>
-              <Button variant="outline">تغيير الصورة</Button>
-            </div>
             <div className="space-y-2">
               <Label>الاسم الكامل</Label>
-              <Input defaultValue="أحمد محمد" />
+              <Input value={user.name} disabled />
             </div>
             <div className="space-y-2">
               <Label>رقم الهاتف</Label>
-              <Input defaultValue="0512345678" dir="ltr" disabled />
+              <Input value={user.phone} dir="ltr" disabled />
             </div>
             <div className="space-y-2">
               <Label>القسم</Label>
-              <Input defaultValue="الطوارئ" disabled />
+              <Input value={user.department?.name || "لا يوجد"} disabled />
             </div>
             <div className="space-y-2">
               <Label>الدور الوظيفي</Label>
-              <Input defaultValue="مشرف القسم" disabled />
+              <Input value={getRoleName(user.role)} disabled />
             </div>
           </CardContent>
-          <CardFooter>
-            <Button>حفظ التغييرات</Button>
-          </CardFooter>
         </Card>
 
         <Card>
@@ -62,19 +110,33 @@ export default function ProfilePage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>كلمة المرور الحالية</Label>
-              <Input type="password" />
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>كلمة المرور الجديدة</Label>
-              <Input type="password" />
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>تأكيد كلمة المرور الجديدة</Label>
-              <Input type="password" />
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
             </div>
           </CardContent>
           <CardFooter>
-            <Button>تحديث كلمة المرور</Button>
+            <Button onClick={handleUpdatePassword} disabled={isPasswordLoading}>
+              {isPasswordLoading ? "جاري التحديث..." : "تحديث كلمة المرور"}
+            </Button>
           </CardFooter>
         </Card>
       </div>

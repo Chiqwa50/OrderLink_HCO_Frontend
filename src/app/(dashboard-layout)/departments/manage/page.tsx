@@ -6,6 +6,8 @@ import { departmentService } from "@/services/department-service"
 import {
   Building2,
   Edit,
+  LayoutGrid,
+  LayoutList,
   Loader2,
   Plus,
   RefreshCw,
@@ -14,6 +16,8 @@ import {
   Trash2,
   Warehouse as WarehouseIcon,
 } from "lucide-react"
+
+import { DepartmentCard } from "@/components/departments/department-card"
 
 import type { Department, DepartmentWarehouse } from "@/types"
 
@@ -86,11 +90,13 @@ function DepartmentRow({
 
   return (
     <TableRow>
-      <TableCell className="font-medium">{dept.name}</TableCell>
-      <TableCell>
+      <TableCell className="font-medium text-base md:text-sm whitespace-nowrap">
+        {dept.name}
+      </TableCell>
+      <TableCell className="whitespace-nowrap">
         <Badge variant="outline">{dept.code}</Badge>
       </TableCell>
-      <TableCell>
+      <TableCell className="whitespace-nowrap">
         {isLoadingWarehouses ? (
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         ) : warehouses.length === 0 ? (
@@ -139,16 +145,18 @@ function DepartmentRow({
           </Popover>
         )}
       </TableCell>
-      <TableCell className="max-w-xs truncate">
+      <TableCell className="max-w-xs truncate whitespace-nowrap">
         {dept.description || "-"}
       </TableCell>
-      <TableCell>
+      <TableCell className="whitespace-nowrap">
         <Badge variant={dept.isActive ? "default" : "secondary"}>
           {dept.isActive ? "نشط" : "غير نشط"}
         </Badge>
       </TableCell>
-      <TableCell>{formatDate(dept.createdAt)}</TableCell>
-      <TableCell className="text-left">
+      <TableCell className="whitespace-nowrap">
+        {formatDate(dept.createdAt)}
+      </TableCell>
+      <TableCell className="text-left whitespace-nowrap">
         <div className="flex gap-2 justify-end">
           <Button variant="outline" size="sm" onClick={() => onEdit(dept)}>
             <Edit className="h-4 w-4" />
@@ -173,12 +181,15 @@ function DepartmentRow({
   )
 }
 
+import { useResponsiveView } from "@/hooks/use-responsive-view"
+
 export default function ManageDepartmentsPage() {
   const router = useRouter()
   const [departments, setDepartments] = useState<Department[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
+  const [viewMode, setViewMode] = useResponsiveView()
 
   useEffect(() => {
     loadDepartments()
@@ -258,20 +269,70 @@ export default function ManageDepartmentsPage() {
   const inactiveDepartments = departments.filter((d) => !d.isActive).length
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">إدارة الأقسام</h1>
-          <p className="text-muted-foreground">عرض وإدارة جميع الأقسام</p>
+    <div className="container mx-auto p-2 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start justify-between w-full md:w-auto">
+          <div>
+            <h1 className="text-3xl font-bold">إدارة الأقسام</h1>
+            <p className="text-muted-foreground">عرض وإدارة جميع الأقسام</p>
+          </div>
+
+          {/* View Mode Toggle - Mobile */}
+          <div className="flex md:hidden items-center border rounded-md bg-background">
+            <Button
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              className="rounded-l-md rounded-r-none h-8 px-2"
+            >
+              <LayoutList className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("cards")}
+              className="rounded-r-md rounded-l-none h-8 px-2"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <Button onClick={() => router.push("/departments/add")}>
-          <Plus className="ml-2 h-4 w-4" />
-          إضافة قسم جديد
-        </Button>
+
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          {/* View Mode Toggle - Desktop */}
+          <div className="hidden md:flex items-center border rounded-md">
+            <Button
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              className="rounded-l-md rounded-r-none h-9"
+            >
+              <LayoutList className="h-4 w-4 ml-1" />
+              <span className="hidden sm:inline">جدول</span>
+            </Button>
+            <Button
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("cards")}
+              className="rounded-r-md rounded-l-none h-9"
+            >
+              <LayoutGrid className="h-4 w-4 ml-1" />
+              <span className="hidden sm:inline">بطاقات</span>
+            </Button>
+          </div>
+
+          <Button
+            onClick={() => router.push("/departments/add")}
+            className="w-full md:w-auto"
+          >
+            <Plus className="ml-2 h-4 w-4" />
+            إضافة قسم جديد
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="hidden md:grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -320,7 +381,8 @@ export default function ManageDepartmentsPage() {
           <CardDescription>ابحث باستخدام الاسم أو الرمز</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2">
+
+          <div className="flex flex-col md:flex-row gap-2">
             <Input
               placeholder="ابحث عن قسم..."
               value={searchTerm}
@@ -328,18 +390,25 @@ export default function ManageDepartmentsPage() {
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               className="flex-1"
             />
-            <Button onClick={handleSearch} disabled={isLoading}>
-              <Search className="ml-2 h-4 w-4" />
-              بحث
-            </Button>
-            <Button
-              variant="outline"
-              onClick={loadDepartments}
-              disabled={isLoading}
-            >
-              <RefreshCw className="ml-2 h-4 w-4" />
-              تحديث
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSearch}
+                disabled={isLoading}
+                className="flex-1 md:flex-none"
+              >
+                <Search className="ml-2 h-4 w-4" />
+                بحث
+              </Button>
+              <Button
+                variant="outline"
+                onClick={loadDepartments}
+                disabled={isLoading}
+                className="flex-1 md:flex-none"
+              >
+                <RefreshCw className="ml-2 h-4 w-4" />
+                تحديث
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -366,19 +435,31 @@ export default function ManageDepartmentsPage() {
             <div className="text-center py-8 text-muted-foreground">
               لا توجد أقسام
             </div>
-          ) : (
+          ) : viewMode === "table" ? (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">الاسم</TableHead>
-                  <TableHead className="text-right">الرمز</TableHead>
-                  <TableHead className="text-right">
+                  <TableHead className="text-right whitespace-nowrap">
+                    الاسم
+                  </TableHead>
+                  <TableHead className="text-right whitespace-nowrap">
+                    الرمز
+                  </TableHead>
+                  <TableHead className="text-right whitespace-nowrap">
                     المستودعات المرتبطة
                   </TableHead>
-                  <TableHead className="text-right">الوصف</TableHead>
-                  <TableHead className="text-right">الحالة</TableHead>
-                  <TableHead className="text-right">تاريخ الإنشاء</TableHead>
-                  <TableHead className="text-left">الإجراءات</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">
+                    الوصف
+                  </TableHead>
+                  <TableHead className="text-right whitespace-nowrap">
+                    الحالة
+                  </TableHead>
+                  <TableHead className="text-right whitespace-nowrap">
+                    تاريخ الإنشاء
+                  </TableHead>
+                  <TableHead className="text-left whitespace-nowrap">
+                    الإجراءات
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -393,6 +474,18 @@ export default function ManageDepartmentsPage() {
                 ))}
               </TableBody>
             </Table>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {departments.map((dept) => (
+                <DepartmentCard
+                  key={dept.id}
+                  dept={dept}
+                  onEdit={handleEdit}
+                  onToggleStatus={handleToggleStatus}
+                  onDelete={handleDeleteClick}
+                />
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>

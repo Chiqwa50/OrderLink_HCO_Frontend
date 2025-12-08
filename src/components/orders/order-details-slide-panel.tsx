@@ -15,6 +15,7 @@ import {
   Warehouse,
   X,
   XCircle,
+  Truck,
 } from "lucide-react"
 
 import type { Order } from "@/types"
@@ -101,7 +102,16 @@ const actionLabels: Record<
     icon: CheckCircle,
     color: "text-green-600",
   },
+  ORDER_DELIVERED: {
+    label: "تم التسليم",
+    icon: Truck,
+    color: "text-emerald-600",
+  },
 }
+
+import { pdfService } from "@/services/pdf-service"
+
+// ... imports
 
 export function OrderDetailsSlidePanel({
   orderId,
@@ -111,6 +121,7 @@ export function OrderDetailsSlidePanel({
   const [order, setOrder] = useState<Order | null>(null)
   const [preparationLogs, setPreparationLogs] = useState<PreparationLog[]>([])
   const [loading, setLoading] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   useEffect(() => {
     if (open && orderId) {
@@ -145,31 +156,15 @@ export function OrderDetailsSlidePanel({
   }
 
   const handleDownloadPDF = async () => {
-    if (!orderId) return
+    if (!order) return
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/orders/${orderId}/pdf`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      )
-
-      if (!response.ok) throw new Error("فشل تحميل PDF")
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `order-${order?.orderNumber || orderId}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      setIsDownloading(true)
+      await pdfService.downloadOrderPDF(order)
     } catch (error) {
       console.error("Error downloading PDF:", error)
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -204,9 +199,16 @@ export function OrderDetailsSlidePanel({
                     size="sm"
                     onClick={handleDownloadPDF}
                     className="gap-2"
+                    disabled={isDownloading}
                   >
-                    <Download className="h-4 w-4" />
-                    <span className="hidden sm:inline">تحميل PDF</span>
+                    {isDownloading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                    <span className="hidden sm:inline">
+                      {isDownloading ? "جاري التحميل..." : "تحميل PDF"}
+                    </span>
                   </Button>
                   <Button
                     variant="ghost"
@@ -398,29 +400,29 @@ export function OrderDetailsSlidePanel({
                                   {/* Quantities */}
                                   {(log.requestedQty !== null ||
                                     log.availableQty !== null) && (
-                                    <div className="flex gap-3 text-xs mb-2">
-                                      {log.requestedQty !== null && (
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-muted-foreground">
-                                            المطلوب:
-                                          </span>
-                                          <span className="font-semibold">
-                                            {log.requestedQty}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {log.availableQty !== null && (
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-muted-foreground">
-                                            المتوفر:
-                                          </span>
-                                          <span className="font-semibold">
-                                            {log.availableQty}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
+                                      <div className="flex gap-3 text-xs mb-2">
+                                        {log.requestedQty !== null && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-muted-foreground">
+                                              المطلوب:
+                                            </span>
+                                            <span className="font-semibold">
+                                              {log.requestedQty}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {log.availableQty !== null && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-muted-foreground">
+                                              المتوفر:
+                                            </span>
+                                            <span className="font-semibold">
+                                              {log.availableQty}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
 
                                   {/* Notes - Don't show if it duplicates the action label */}
                                   {log.notes &&

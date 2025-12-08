@@ -7,6 +7,8 @@ import { userService } from "@/services/user-service"
 import { warehouseService } from "@/services/warehouse-service"
 import {
   Edit,
+  LayoutGrid,
+  LayoutList,
   Loader2,
   Plus,
   RefreshCw,
@@ -14,6 +16,8 @@ import {
   Trash2,
   Users,
 } from "lucide-react"
+
+import { UserCard } from "@/components/users/user-card"
 
 import type { Department, UpdateUserRequest, User, Warehouse } from "@/types"
 
@@ -70,6 +74,8 @@ const roleColors: Record<string, string> = {
   DRIVER: "bg-yellow-100 text-yellow-800",
 }
 
+import { useResponsiveView } from "@/hooks/use-responsive-view"
+
 export default function ManageUsersPage() {
   const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
@@ -77,6 +83,7 @@ export default function ManageUsersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
+  const [viewMode, setViewMode] = useResponsiveView()
 
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -220,6 +227,8 @@ export default function ManageUsersPage() {
     }
   }
 
+  const [visibleCount, setVisibleCount] = useState(10)
+
   const filteredUsers = users.filter(
     (user) =>
       user.name.includes(searchTerm) ||
@@ -227,25 +236,86 @@ export default function ManageUsersPage() {
       user.department?.name?.includes(searchTerm)
   )
 
+  const displayedUsers = filteredUsers.slice(0, visibleCount)
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 10)
+  }
+
+  // Reset visible count when search term changes
+  useEffect(() => {
+    setVisibleCount(10)
+  }, [searchTerm])
+
   const adminUsers = users.filter((u) => u.role === "ADMIN").length
   const departmentUsers = users.filter((u) => u.role === "DEPARTMENT").length
   const warehouseUsers = users.filter((u) => u.role === "WAREHOUSE").length
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">إدارة المستخدمين</h1>
-          <p className="text-muted-foreground">عرض وإدارة جميع المستخدمين</p>
+    <div className="container mx-auto p-2 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start justify-between w-full md:w-auto">
+          <div>
+            <h1 className="text-3xl font-bold">إدارة المستخدمين</h1>
+            <p className="text-muted-foreground">عرض وإدارة جميع المستخدمين</p>
+          </div>
+
+          {/* View Mode Toggle - Mobile */}
+          <div className="flex md:hidden items-center border rounded-md bg-background">
+            <Button
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              className="rounded-l-md rounded-r-none h-8 px-2"
+            >
+              <LayoutList className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("cards")}
+              className="rounded-r-md rounded-l-none h-8 px-2"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <Button onClick={() => router.push("/users/add")}>
-          <Plus className="ml-2 h-4 w-4" />
-          إضافة مستخدم جديد
-        </Button>
+
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          {/* View Mode Toggle - Desktop */}
+          <div className="hidden md:flex items-center border rounded-md">
+            <Button
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              className="rounded-l-md rounded-r-none h-9"
+            >
+              <LayoutList className="h-4 w-4 ml-1" />
+              <span className="hidden sm:inline">جدول</span>
+            </Button>
+            <Button
+              variant={viewMode === "cards" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("cards")}
+              className="rounded-r-md rounded-l-none h-9"
+            >
+              <LayoutGrid className="h-4 w-4 ml-1" />
+              <span className="hidden sm:inline">بطاقات</span>
+            </Button>
+          </div>
+
+          <Button
+            onClick={() => router.push("/users/add")}
+            className="w-full md:w-auto"
+          >
+            <Plus className="ml-2 h-4 w-4" />
+            إضافة مستخدم جديد
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="hidden md:grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -302,14 +372,18 @@ export default function ManageUsersPage() {
           <CardDescription>ابحث باستخدام الاسم أو رقم الهاتف</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2">
+          <div className="flex flex-col md:flex-row gap-2">
             <Input
               placeholder="ابحث عن مستخدم..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1"
             />
-            <Button variant="outline" onClick={() => setSearchTerm("")}>
+            <Button
+              variant="outline"
+              onClick={() => setSearchTerm("")}
+              className="w-full md:w-auto"
+            >
               <RefreshCw className="ml-2 h-4 w-4" />
               تحديث
             </Button>
@@ -339,52 +413,101 @@ export default function ManageUsersPage() {
             <div className="text-center py-8 text-muted-foreground">
               لا يوجد مستخدمين
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">الاسم</TableHead>
-                  <TableHead className="text-right">رقم الهاتف</TableHead>
-                  <TableHead className="text-right">الدور</TableHead>
-                  <TableHead className="text-right">القسم</TableHead>
-                  <TableHead className="text-right">تاريخ الإنشاء</TableHead>
-                  <TableHead className="text-left">الإجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.phone}</TableCell>
-                    <TableCell>
-                      <Badge className={roleColors[user.role]}>
-                        {roleLabels[user.role]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{user.department?.name || "-"}</TableCell>
-                    <TableCell>{formatDate(user.createdAt)}</TableCell>
-                    <TableCell className="text-left">
-                      <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(user)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteClick(user.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          ) : viewMode === "table" ? (
+            <div className="space-y-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right whitespace-nowrap">
+                      الاسم
+                    </TableHead>
+                    <TableHead className="text-right whitespace-nowrap">
+                      رقم الهاتف
+                    </TableHead>
+                    <TableHead className="text-right whitespace-nowrap">
+                      الدور
+                    </TableHead>
+                    <TableHead className="text-right whitespace-nowrap">
+                      القسم
+                    </TableHead>
+                    <TableHead className="text-right whitespace-nowrap">
+                      تاريخ الإنشاء
+                    </TableHead>
+                    <TableHead className="text-left whitespace-nowrap">
+                      الإجراءات
+                    </TableHead>
                   </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {displayedUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium text-base md:text-sm whitespace-nowrap">
+                        {user.name}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {user.phone}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <Badge className={roleColors[user.role]}>
+                          {roleLabels[user.role]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {user.department?.name || "-"}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDate(user.createdAt)}
+                      </TableCell>
+                      <TableCell className="text-left whitespace-nowrap">
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(user)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteClick(user.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {visibleCount < filteredUsers.length && (
+                <div className="flex justify-center pt-4">
+                  <Button onClick={handleLoadMore} variant="outline">
+                    تحميل المزيد
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {displayedUsers.map((user) => (
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    onEdit={handleEdit}
+                    onDelete={handleDeleteClick}
+                  />
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+              {visibleCount < filteredUsers.length && (
+                <div className="flex justify-center pt-4">
+                  <Button onClick={handleLoadMore} variant="outline">
+                    تحميل المزيد
+                  </Button>
+                </div>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>

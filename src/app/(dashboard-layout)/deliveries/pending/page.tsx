@@ -22,17 +22,22 @@ import { OrderCard } from "@/components/orders/order-card"
 export default function PendingDeliveriesPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [isDelivering, setIsDelivering] = useState(false)
 
   useEffect(() => {
-    loadOrders()
+    loadOrders(true)
   }, [])
 
-  const loadOrders = async () => {
-    setIsLoading(true)
+  const loadOrders = async (isInitialLoad = false) => {
+    if (isInitialLoad) {
+      setIsLoading(true)
+    } else {
+      setIsRefreshing(true)
+    }
     setError(null)
 
     try {
@@ -43,7 +48,11 @@ export default function PendingDeliveriesPage() {
         err instanceof Error ? err.message : "حدث خطأ أثناء تحميل الطلبيات"
       )
     } finally {
-      setIsLoading(false)
+      if (isInitialLoad) {
+        setIsLoading(false)
+      } else {
+        setIsRefreshing(false)
+      }
     }
   }
 
@@ -63,7 +72,7 @@ export default function PendingDeliveriesPage() {
       })
 
       // تحديث القائمة
-      await loadOrders()
+      await loadOrders(false)
       setShowConfirmDialog(false)
       setSelectedOrder(null)
     } catch (err) {
@@ -88,7 +97,7 @@ export default function PendingDeliveriesPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">
             الطلبيات الجاهزة للتوصيل
@@ -97,9 +106,15 @@ export default function PendingDeliveriesPage() {
             الطلبيات المجهزة والجاهزة للتسليم إلى الأقسام
           </p>
         </div>
-        <Button onClick={loadOrders} variant="outline">
-          <RefreshCw className="ml-2 h-4 w-4" />
-          تحديث
+        <Button
+          onClick={() => loadOrders(false)}
+          disabled={isRefreshing}
+          className="w-full md:w-auto"
+        >
+          <RefreshCw
+            className={`ml-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+          تحديث البيانات
         </Button>
       </div>
 

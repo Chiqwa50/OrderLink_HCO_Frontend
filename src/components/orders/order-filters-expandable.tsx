@@ -88,7 +88,7 @@ export function OrderFiltersExpandable({
   ).length
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       {/* Toggle Button */}
       <Button
         variant="outline"

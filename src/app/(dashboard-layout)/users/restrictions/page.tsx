@@ -63,6 +63,13 @@ export default function UserRestrictionsPage() {
     const [isBulkUpdating, setIsBulkUpdating] = useState(false)
     const [bulkTargetRole, setBulkTargetRole] = useState<"DEPARTMENT" | "WAREHOUSE">("DEPARTMENT")
 
+    // Pagination state
+    const [visibleDepartmentUsersCount, setVisibleDepartmentUsersCount] = useState(10)
+    const [visibleWarehouseUsersCount, setVisibleWarehouseUsersCount] = useState(10)
+
+    const visibleDepartmentUsers = departmentUsers.slice(0, visibleDepartmentUsersCount)
+    const visibleWarehouseUsers = warehouseUsers.slice(0, visibleWarehouseUsersCount)
+
     useEffect(() => {
         loadData()
     }, [])
@@ -221,17 +228,17 @@ export default function UserRestrictionsPage() {
             </div>
 
             {/* Vertical Tabs Layout */}
-            <Tabs defaultValue="department" className="flex gap-6" dir="rtl">
+            <Tabs defaultValue="department" className="flex flex-col md:flex-row gap-6" dir="rtl">
                 {/* Vertical Tabs List */}
-                <TabsList className="flex h-auto flex-col items-stretch justify-start gap-2 bg-transparent p-0 w-64">
+                <TabsList className="flex h-auto w-full flex-row overflow-x-auto md:w-64 md:flex-col items-stretch justify-start gap-2 bg-transparent p-0">
                     <TabsTrigger
                         value="department"
-                        className="justify-start gap-3 rounded-lg border-2 border-transparent bg-muted px-4 py-3 text-right data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                        className="justify-start gap-3 rounded-lg border-2 border-transparent bg-muted px-4 py-3 text-right data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm min-w-[120px] md:min-w-0"
                     >
-                        <Users className="h-5 w-5" />
+                        <Users className="h-5 w-5 shrink-0" />
                         <div className="flex flex-col items-start">
-                            <span className="font-semibold">مسؤول القسم</span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="font-semibold">القسم</span>
+                            <span className="text-xs text-muted-foreground hidden md:block">
                                 Department Supervisor
                             </span>
                         </div>
@@ -239,12 +246,12 @@ export default function UserRestrictionsPage() {
 
                     <TabsTrigger
                         value="warehouse"
-                        className="justify-start gap-3 rounded-lg border-2 border-transparent bg-muted px-4 py-3 text-right data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                        className="justify-start gap-3 rounded-lg border-2 border-transparent bg-muted px-4 py-3 text-right data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm min-w-[120px] md:min-w-0"
                     >
-                        <Warehouse className="h-5 w-5" />
+                        <Warehouse className="h-5 w-5 shrink-0" />
                         <div className="flex flex-col items-start">
-                            <span className="font-semibold">مسؤول المستودع</span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="font-semibold">المستودع</span>
+                            <span className="text-xs text-muted-foreground hidden md:block">
                                 Warehouse Supervisor
                             </span>
                         </div>
@@ -252,12 +259,12 @@ export default function UserRestrictionsPage() {
 
                     <TabsTrigger
                         value="driver"
-                        className="justify-start gap-3 rounded-lg border-2 border-transparent bg-muted px-4 py-3 text-right data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                        className="justify-start gap-3 rounded-lg border-2 border-transparent bg-muted px-4 py-3 text-right data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm min-w-[120px] md:min-w-0"
                     >
-                        <Truck className="h-5 w-5" />
+                        <Truck className="h-5 w-5 shrink-0" />
                         <div className="flex flex-col items-start">
-                            <span className="font-semibold">السائق</span>
-                            <span className="text-xs text-muted-foreground">Driver</span>
+                            <span className="font-semibold">السائقين</span>
+                            <span className="text-xs text-muted-foreground hidden md:block">Driver</span>
                         </div>
                     </TabsTrigger>
                 </TabsList>
@@ -274,7 +281,7 @@ export default function UserRestrictionsPage() {
 
                         <Card>
                             <CardHeader>
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                     <div>
                                         <CardTitle className="flex items-center gap-2">
                                             <Users className="h-5 w-5" />
@@ -288,6 +295,7 @@ export default function UserRestrictionsPage() {
                                         <Button
                                             onClick={() => setShowBulkDialog(true)}
                                             variant="outline"
+                                            className="w-full md:w-auto"
                                         >
                                             <Users className="ml-2 h-4 w-4" />
                                             تطبيق على الجميع
@@ -305,55 +313,120 @@ export default function UserRestrictionsPage() {
                                         لا يوجد مسؤولو أقسام
                                     </div>
                                 ) : (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="text-right">الاسم</TableHead>
-                                                <TableHead className="text-right">رقم الهاتف</TableHead>
-                                                <TableHead className="text-right">معدل الطلبات</TableHead>
-                                                <TableHead className="text-right">رؤية الطلبيات</TableHead>
-                                                <TableHead className="text-left">الإجراءات</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {departmentUsers.map((user) => {
+                                    <>
+                                        {/* Mobile View (Cards) */}
+                                        <div className="grid gap-4 md:hidden">
+                                            {visibleDepartmentUsers.map((user) => {
                                                 const restriction = getUserRestriction(user.id)
                                                 return (
-                                                    <TableRow key={user.id}>
-                                                        <TableCell className="font-medium">{user.name}</TableCell>
-                                                        <TableCell>{user.phone}</TableCell>
-                                                        <TableCell>
-                                                            {restriction?.orderRateLimit && restriction?.orderRatePeriodHours ? (
-                                                                <Badge variant="outline">
-                                                                    {restriction.orderRateLimit} طلبات / {restriction.orderRatePeriodHours} ساعة
-                                                                </Badge>
-                                                            ) : (
-                                                                <span className="text-sm text-muted-foreground">غير محدد</span>
-                                                            )}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            {restriction ? (
-                                                                <Badge variant={restriction.canViewAllOrders ? "default" : "secondary"}>
-                                                                    {restriction.canViewAllOrders ? "جميع الطلبيات" : "طلبياته فقط"}
-                                                                </Badge>
-                                                            ) : (
-                                                                <Badge variant="secondary">طلبياته فقط</Badge>
-                                                            )}
-                                                        </TableCell>
-                                                        <TableCell className="text-left">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => handleEdit(user)}
-                                                            >
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                        </TableCell>
-                                                    </TableRow>
+                                                    <Card key={user.id} className="bg-muted/50">
+                                                        <CardContent className="p-4 space-y-4">
+                                                            <div className="flex items-start justify-between">
+                                                                <div className="space-y-1">
+                                                                    <p className="font-semibold">{user.name}</p>
+                                                                    <p className="text-sm text-muted-foreground">{user.phone}</p>
+                                                                </div>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => handleEdit(user)}
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+
+                                                            <div className="space-y-2">
+                                                                <div className="flex justify-between text-sm">
+                                                                    <span className="text-muted-foreground">معدل الطلبات:</span>
+                                                                    {restriction?.orderRateLimit && restriction?.orderRatePeriodHours ? (
+                                                                        <Badge variant="outline">
+                                                                            {restriction.orderRateLimit} طلبات / {restriction.orderRatePeriodHours} ساعة
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <span className="text-muted-foreground">غير محدد</span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex justify-between text-sm">
+                                                                    <span className="text-muted-foreground">رؤية الطلبيات:</span>
+                                                                    {restriction ? (
+                                                                        <Badge variant={restriction.canViewAllOrders ? "default" : "secondary"}>
+                                                                            {restriction.canViewAllOrders ? "جميع الطلبيات" : "طلبياته فقط"}
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <Badge variant="secondary">طلبياته فقط</Badge>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
                                                 )
                                             })}
-                                        </TableBody>
-                                    </Table>
+                                        </div>
+
+                                        {/* Desktop View (Table) */}
+                                        <div className="hidden md:block">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead className="text-right">الاسم</TableHead>
+                                                        <TableHead className="text-right">رقم الهاتف</TableHead>
+                                                        <TableHead className="text-right">معدل الطلبات</TableHead>
+                                                        <TableHead className="text-right">رؤية الطلبيات</TableHead>
+                                                        <TableHead className="text-left">الإجراءات</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {visibleDepartmentUsers.map((user) => {
+                                                        const restriction = getUserRestriction(user.id)
+                                                        return (
+                                                            <TableRow key={user.id}>
+                                                                <TableCell className="font-medium">{user.name}</TableCell>
+                                                                <TableCell>{user.phone}</TableCell>
+                                                                <TableCell>
+                                                                    {restriction?.orderRateLimit && restriction?.orderRatePeriodHours ? (
+                                                                        <Badge variant="outline">
+                                                                            {restriction.orderRateLimit} طلبات / {restriction.orderRatePeriodHours} ساعة
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <span className="text-sm text-muted-foreground">غير محدد</span>
+                                                                    )}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    {restriction ? (
+                                                                        <Badge variant={restriction.canViewAllOrders ? "default" : "secondary"}>
+                                                                            {restriction.canViewAllOrders ? "جميع الطلبيات" : "طلبياته فقط"}
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <Badge variant="secondary">طلبياته فقط</Badge>
+                                                                    )}
+                                                                </TableCell>
+                                                                <TableCell className="text-left">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => handleEdit(user)}
+                                                                    >
+                                                                        <Edit className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )
+                                                    })}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+
+                                        {visibleDepartmentUsersCount < departmentUsers.length && (
+                                            <div className="flex justify-center pt-4">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => setVisibleDepartmentUsersCount((prev) => prev + 10)}
+                                                >
+                                                    تحميل المزيد
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </CardContent>
                         </Card>
@@ -369,7 +442,7 @@ export default function UserRestrictionsPage() {
 
                         <Card>
                             <CardHeader>
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                     <div>
                                         <CardTitle className="flex items-center gap-2">
                                             <Warehouse className="h-5 w-5" />
@@ -386,6 +459,7 @@ export default function UserRestrictionsPage() {
                                                 setShowBulkDialog(true)
                                             }}
                                             variant="outline"
+                                            className="w-full md:w-auto"
                                         >
                                             <Users className="ml-2 h-4 w-4" />
                                             تطبيق على الجميع
@@ -403,53 +477,116 @@ export default function UserRestrictionsPage() {
                                         لا يوجد مسؤولو مستودعات
                                     </div>
                                 ) : (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="text-right">الاسم</TableHead>
-                                                <TableHead className="text-right">رقم الهاتف</TableHead>
-                                                <TableHead className="text-right">رؤية الطلبات قيد المراجعة</TableHead>
-                                                <TableHead className="text-right">قبول الطلبات</TableHead>
-                                                <TableHead className="text-right">رفض الطلبات</TableHead>
-                                                <TableHead className="text-left">الإجراءات</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {warehouseUsers.map((user) => {
+                                    <>
+                                        {/* Mobile View (Cards) */}
+                                        <div className="grid gap-4 md:hidden">
+                                            {visibleWarehouseUsers.map((user) => {
                                                 const restriction = getWarehouseUserRestriction(user.id)
                                                 return (
-                                                    <TableRow key={user.id}>
-                                                        <TableCell className="font-medium">{user.name}</TableCell>
-                                                        <TableCell>{user.phone}</TableCell>
-                                                        <TableCell>
-                                                            <Badge variant={restriction?.canViewPendingOrders ? "default" : "secondary"}>
-                                                                {restriction?.canViewPendingOrders ? "نعم" : "لا"}
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Badge variant={restriction?.canApproveOrders !== false ? "default" : "secondary"}>
-                                                                {restriction?.canApproveOrders !== false ? "نعم" : "لا"}
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Badge variant={restriction?.canRejectOrders !== false ? "default" : "secondary"}>
-                                                                {restriction?.canRejectOrders !== false ? "نعم" : "لا"}
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell className="text-left">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => handleEdit(user)}
-                                                            >
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                        </TableCell>
-                                                    </TableRow>
+                                                    <Card key={user.id} className="bg-muted/50">
+                                                        <CardContent className="p-4 space-y-4">
+                                                            <div className="flex items-start justify-between">
+                                                                <div className="space-y-1">
+                                                                    <p className="font-semibold">{user.name}</p>
+                                                                    <p className="text-sm text-muted-foreground">{user.phone}</p>
+                                                                </div>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => handleEdit(user)}
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+
+                                                            <div className="space-y-2">
+                                                                <div className="flex justify-between text-sm">
+                                                                    <span className="text-muted-foreground">رؤية الطلبات قيد المراجعة:</span>
+                                                                    <Badge variant={restriction?.canViewPendingOrders ? "default" : "secondary"}>
+                                                                        {restriction?.canViewPendingOrders ? "نعم" : "لا"}
+                                                                    </Badge>
+                                                                </div>
+                                                                <div className="flex justify-between text-sm">
+                                                                    <span className="text-muted-foreground">قبول الطلبات:</span>
+                                                                    <Badge variant={restriction?.canApproveOrders !== false ? "default" : "secondary"}>
+                                                                        {restriction?.canApproveOrders !== false ? "نعم" : "لا"}
+                                                                    </Badge>
+                                                                </div>
+                                                                <div className="flex justify-between text-sm">
+                                                                    <span className="text-muted-foreground">رفض الطلبات:</span>
+                                                                    <Badge variant={restriction?.canRejectOrders !== false ? "default" : "secondary"}>
+                                                                        {restriction?.canRejectOrders !== false ? "نعم" : "لا"}
+                                                                    </Badge>
+                                                                </div>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
                                                 )
                                             })}
-                                        </TableBody>
-                                    </Table>
+                                        </div>
+
+                                        {/* Desktop View (Table) */}
+                                        <div className="hidden md:block">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead className="text-right">الاسم</TableHead>
+                                                        <TableHead className="text-right">رقم الهاتف</TableHead>
+                                                        <TableHead className="text-right">رؤية الطلبات قيد المراجعة</TableHead>
+                                                        <TableHead className="text-right">قبول الطلبات</TableHead>
+                                                        <TableHead className="text-right">رفض الطلبات</TableHead>
+                                                        <TableHead className="text-left">الإجراءات</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {visibleWarehouseUsers.map((user) => {
+                                                        const restriction = getWarehouseUserRestriction(user.id)
+                                                        return (
+                                                            <TableRow key={user.id}>
+                                                                <TableCell className="font-medium">{user.name}</TableCell>
+                                                                <TableCell>{user.phone}</TableCell>
+                                                                <TableCell>
+                                                                    <Badge variant={restriction?.canViewPendingOrders ? "default" : "secondary"}>
+                                                                        {restriction?.canViewPendingOrders ? "نعم" : "لا"}
+                                                                    </Badge>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <Badge variant={restriction?.canApproveOrders !== false ? "default" : "secondary"}>
+                                                                        {restriction?.canApproveOrders !== false ? "نعم" : "لا"}
+                                                                    </Badge>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <Badge variant={restriction?.canRejectOrders !== false ? "default" : "secondary"}>
+                                                                        {restriction?.canRejectOrders !== false ? "نعم" : "لا"}
+                                                                    </Badge>
+                                                                </TableCell>
+                                                                <TableCell className="text-left">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => handleEdit(user)}
+                                                                    >
+                                                                        <Edit className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )
+                                                    })}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+
+                                        {visibleWarehouseUsersCount < warehouseUsers.length && (
+                                            <div className="flex justify-center pt-4">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => setVisibleWarehouseUsersCount((prev) => prev + 10)}
+                                                >
+                                                    تحميل المزيد
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </CardContent>
                         </Card>
