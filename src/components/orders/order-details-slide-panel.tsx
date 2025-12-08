@@ -15,6 +15,7 @@ import {
   Warehouse,
   X,
   XCircle,
+  Truck,
 } from "lucide-react"
 
 import type { Order } from "@/types"
@@ -100,6 +101,11 @@ const actionLabels: Record<
     label: "تم إكمال تجهيز الطلب",
     icon: CheckCircle,
     color: "text-green-600",
+  },
+  ORDER_DELIVERED: {
+    label: "تم التسليم",
+    icon: Truck,
+    color: "text-emerald-600",
   },
 }
 
@@ -398,29 +404,29 @@ export function OrderDetailsSlidePanel({
                                   {/* Quantities */}
                                   {(log.requestedQty !== null ||
                                     log.availableQty !== null) && (
-                                    <div className="flex gap-3 text-xs mb-2">
-                                      {log.requestedQty !== null && (
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-muted-foreground">
-                                            المطلوب:
-                                          </span>
-                                          <span className="font-semibold">
-                                            {log.requestedQty}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {log.availableQty !== null && (
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-muted-foreground">
-                                            المتوفر:
-                                          </span>
-                                          <span className="font-semibold">
-                                            {log.availableQty}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
+                                      <div className="flex gap-3 text-xs mb-2">
+                                        {log.requestedQty !== null && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-muted-foreground">
+                                              المطلوب:
+                                            </span>
+                                            <span className="font-semibold">
+                                              {log.requestedQty}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {log.availableQty !== null && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-muted-foreground">
+                                              المتوفر:
+                                            </span>
+                                            <span className="font-semibold">
+                                              {log.availableQty}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
 
                                   {/* Notes - Don't show if it duplicates the action label */}
                                   {log.notes &&
