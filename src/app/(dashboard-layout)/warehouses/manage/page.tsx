@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import { warehouseService } from "@/services/warehouse-service"
 import {
   Edit,
+  LayoutGrid,
+  LayoutList,
   Loader2,
   Plus,
   RefreshCw,
@@ -12,6 +14,8 @@ import {
   Trash2,
   Warehouse,
 } from "lucide-react"
+
+import { WarehouseCard } from "@/components/warehouses/warehouse-card"
 
 import type {
   UpdateWarehouseRequest,
@@ -81,6 +85,7 @@ export default function ManageWarehousesPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState<WType | "all">("all")
+  const [viewMode, setViewMode] = useState<"table" | "card">("table")
 
   // Edit dialog state
   const [editingWarehouse, setEditingWarehouse] =
@@ -191,20 +196,70 @@ export default function ManageWarehousesPage() {
   const inactiveWarehouses = warehouses.filter((w) => !w.isActive).length
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">إدارة المستودعات</h1>
-          <p className="text-muted-foreground">عرض وإدارة جميع المستودعات</p>
+    <div className="container mx-auto p-2 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start justify-between w-full md:w-auto">
+          <div>
+            <h1 className="text-3xl font-bold">إدارة المستودعات</h1>
+            <p className="text-muted-foreground">عرض وإدارة جميع المستودعات</p>
+          </div>
+
+          {/* View Mode Toggle - Mobile */}
+          <div className="flex md:hidden items-center border rounded-md bg-background">
+            <Button
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              className="rounded-l-md rounded-r-none h-8 px-2"
+            >
+              <LayoutList className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "card" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("card")}
+              className="rounded-r-md rounded-l-none h-8 px-2"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <Button onClick={() => router.push("/warehouses/add")}>
-          <Plus className="ml-2 h-4 w-4" />
-          إضافة مستودع جديد
-        </Button>
+
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          {/* View Mode Toggle - Desktop */}
+          <div className="hidden md:flex items-center border rounded-md">
+            <Button
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              className="rounded-l-md rounded-r-none h-9"
+            >
+              <LayoutList className="h-4 w-4 ml-1" />
+              <span className="hidden sm:inline">جدول</span>
+            </Button>
+            <Button
+              variant={viewMode === "card" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("card")}
+              className="rounded-r-md rounded-l-none h-9"
+            >
+              <LayoutGrid className="h-4 w-4 ml-1" />
+              <span className="hidden sm:inline">بطاقات</span>
+            </Button>
+          </div>
+
+          <Button
+            onClick={() => router.push("/warehouses/add")}
+            className="w-full md:w-auto"
+          >
+            <Plus className="ml-2 h-4 w-4" />
+            إضافة مستودع جديد
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="hidden md:grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -255,7 +310,7 @@ export default function ManageWarehousesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2">
+          <div className="flex flex-col md:flex-row gap-2">
             <Input
               placeholder="ابحث عن مستودع..."
               value={searchTerm}
@@ -263,34 +318,43 @@ export default function ManageWarehousesPage() {
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               className="flex-1"
             />
-            <Select
-              value={filterType}
-              onValueChange={(value: any) => setFilterType(value)}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="نوع المستودع" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع الأنواع</SelectItem>
-                <SelectItem value="pharmaceutical">دوائي</SelectItem>
-                <SelectItem value="logistics">لوجستي</SelectItem>
-                <SelectItem value="equipment">أجهزة</SelectItem>
-                <SelectItem value="medical">طبي</SelectItem>
-                <SelectItem value="general">عام</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button onClick={handleSearch} disabled={isLoading}>
-              <Search className="ml-2 h-4 w-4" />
-              بحث
-            </Button>
-            <Button
-              variant="outline"
-              onClick={loadWarehouses}
-              disabled={isLoading}
-            >
-              <RefreshCw className="ml-2 h-4 w-4" />
-              تحديث
-            </Button>
+            <div className="flex flex-col md:flex-row gap-2">
+              <Select
+                value={filterType}
+                onValueChange={(value: any) => setFilterType(value)}
+              >
+                <SelectTrigger className="w-full md:w-[200px]">
+                  <SelectValue placeholder="نوع المستودع" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الأنواع</SelectItem>
+                  <SelectItem value="pharmaceutical">دوائي</SelectItem>
+                  <SelectItem value="logistics">لوجستي</SelectItem>
+                  <SelectItem value="equipment">أجهزة</SelectItem>
+                  <SelectItem value="medical">طبي</SelectItem>
+                  <SelectItem value="general">عام</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSearch}
+                  disabled={isLoading}
+                  className="flex-1 md:flex-none"
+                >
+                  <Search className="ml-2 h-4 w-4" />
+                  بحث
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={loadWarehouses}
+                  disabled={isLoading}
+                  className="flex-1 md:flex-none"
+                >
+                  <RefreshCw className="ml-2 h-4 w-4" />
+                  تحديث
+                </Button>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -317,45 +381,61 @@ export default function ManageWarehousesPage() {
             <div className="text-center py-8 text-muted-foreground">
               لا توجد مستودعات
             </div>
-          ) : (
+          ) : viewMode === "table" ? (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">الاسم</TableHead>
-                  <TableHead className="text-right">الرمز</TableHead>
-                  <TableHead className="text-right">النوع</TableHead>
-                  <TableHead className="text-right">الموقع</TableHead>
-                  <TableHead className="text-right">الحالة</TableHead>
-                  <TableHead className="text-right">تاريخ الإنشاء</TableHead>
-                  <TableHead className="text-left">الإجراءات</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">
+                    الاسم
+                  </TableHead>
+                  <TableHead className="text-right whitespace-nowrap">
+                    الرمز
+                  </TableHead>
+                  <TableHead className="text-right whitespace-nowrap">
+                    النوع
+                  </TableHead>
+                  <TableHead className="text-right whitespace-nowrap">
+                    الموقع
+                  </TableHead>
+                  <TableHead className="text-right whitespace-nowrap">
+                    الحالة
+                  </TableHead>
+                  <TableHead className="text-right whitespace-nowrap">
+                    تاريخ الإنشاء
+                  </TableHead>
+                  <TableHead className="text-left whitespace-nowrap">
+                    الإجراءات
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {warehouses.map((warehouse) => (
                   <TableRow key={warehouse.id}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium text-base md:text-sm whitespace-nowrap">
                       {warehouse.name}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <Badge variant="outline">{warehouse.code}</Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <Badge className={warehouseTypeColors[warehouse.type]}>
                         {warehouseTypeLabels[warehouse.type]}
                       </Badge>
                     </TableCell>
-                    <TableCell className="max-w-xs truncate">
+                    <TableCell className="max-w-xs truncate whitespace-nowrap">
                       {warehouse.location || "-"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <Badge
                         variant={warehouse.isActive ? "default" : "secondary"}
                       >
                         {warehouse.isActive ? "نشط" : "غير نشط"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{formatDate(warehouse.createdAt)}</TableCell>
-                    <TableCell className="text-left">
+                    <TableCell className="whitespace-nowrap">
+                      {formatDate(warehouse.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-left whitespace-nowrap">
                       <div className="flex gap-2 justify-end">
                         <Button
                           variant="outline"
@@ -386,6 +466,18 @@ export default function ManageWarehousesPage() {
                 ))}
               </TableBody>
             </Table>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {warehouses.map((warehouse) => (
+                <WarehouseCard
+                  key={warehouse.id}
+                  warehouse={warehouse}
+                  onEdit={handleEdit}
+                  onToggleStatus={handleToggleStatus}
+                  onDelete={handleDeleteClick}
+                />
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
