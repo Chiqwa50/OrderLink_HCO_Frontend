@@ -24,14 +24,22 @@ class PDFService {
       }
 
       const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
+      // Create blob with explicit type for better mobile support
+      const pdfBlob = new Blob([blob], { type: "application/pdf" })
+      const url = window.URL.createObjectURL(pdfBlob)
+
       const link = document.createElement("a")
       link.href = url
       link.download = `order-${order.orderNumber}.pdf`
+      link.target = "_blank" // Required for some mobile browsers
       document.body.appendChild(link)
       link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
+
+      // Small delay to ensure download starts on mobile before cleaning up
+      setTimeout(() => {
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      }, 100)
     } catch (error) {
       console.error("Error downloading PDF:", error)
       throw error
