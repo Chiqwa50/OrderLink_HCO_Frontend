@@ -28,12 +28,21 @@ export function WarehouseItemsList({
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // Reset state when warehouse changes
+    setItems([])
+    setPage(1)
+    setHasMore(true)
     loadItems(1, searchTerm)
   }, [warehouse.id])
 
   // Debounce search
   useEffect(() => {
+    // Skip the first run as it's handled by the warehouse.id effect
+    if (items.length === 0 && page === 1 && !searchTerm) return
+
     const timer = setTimeout(() => {
+      // Reset page when searching
+      setPage(1)
       loadItems(1, searchTerm)
     }, 500)
 
@@ -74,7 +83,13 @@ export function WarehouseItemsList({
       if (pageNum === 1) {
         setItems(result.items)
       } else {
-        setItems((prev) => [...prev, ...result.items])
+        setItems((prev) => {
+          // Filter out items that already exist in the list
+          const newItems = result.items.filter(
+            (newItem) => !prev.some((existingItem) => existingItem.id === newItem.id)
+          )
+          return [...prev, ...newItems]
+        })
       }
 
       setPage(pageNum)
