@@ -40,7 +40,7 @@ export function TopItemsList({ data }: TopItemsListProps) {
                 <CardDescription>أعلى 5 مواد تم طلبها</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="space-y-4 h-[350px] overflow-y-auto">
+                <div className="space-y-4 h-auto md:h-[350px] md:overflow-y-auto">
                     {data.map((item, index) => {
                         const percentage = (item.totalQuantity / maxQuantity) * 100
 

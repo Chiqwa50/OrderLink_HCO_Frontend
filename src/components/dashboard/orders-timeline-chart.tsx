@@ -114,6 +114,9 @@ export function OrdersTimelineChart({ data: initialData, isLoading = false, onPe
                 toolbar: {
                     show: false,
                 },
+                zoom: {
+                    enabled: false,
+                },
                 fontFamily: "inherit",
                 foreColor: isDark ? "#e4e4e7" : "#52525b",
             },
