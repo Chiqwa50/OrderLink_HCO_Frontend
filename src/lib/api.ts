@@ -80,6 +80,27 @@ class ApiClient {
       body: JSON.stringify(data),
     })
   }
+
+  // Dashboard methods
+  async getDashboardStats(): Promise<any> {
+    return this.request("/dashboard/stats")
+  }
+
+  async getOrdersTimeline(days: number = 7): Promise<any> {
+    return this.request(`/dashboard/timeline?days=${days}`)
+  }
+
+  async getDepartmentActivity(limit: number = 10): Promise<any> {
+    return this.request(`/dashboard/departments?limit=${limit}`)
+  }
+
+  async getTopItems(limit: number = 5): Promise<any> {
+    return this.request(`/dashboard/top-items?limit=${limit}`)
+  }
+
+  async getOrderStatusDistribution(): Promise<any> {
+    return this.request("/dashboard/status-distribution")
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL)
