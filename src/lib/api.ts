@@ -101,6 +101,10 @@ class ApiClient {
   async getOrderStatusDistribution(): Promise<any> {
     return this.request("/dashboard/status-distribution")
   }
+
+  async getTopWarehouseUsers(limit: number = 5): Promise<any> {
+    return this.request(`/dashboard/top-warehouse-users?limit=${limit}`)
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL)

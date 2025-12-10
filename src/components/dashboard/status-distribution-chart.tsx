@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useTheme } from "next-themes"
+import { useIsDarkMode } from "@/hooks/use-mode"
 import type { OrderStatus } from "@/types"
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false })
@@ -37,7 +37,7 @@ const statusColors: Record<OrderStatus, string> = {
 }
 
 export function StatusDistributionChart({ data }: StatusDistributionChartProps) {
-    const { theme } = useTheme()
+    const isDark = useIsDarkMode()
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
@@ -60,7 +60,7 @@ export function StatusDistributionChart({ data }: StatusDistributionChartProps) 
         )
     }
 
-    const isDark = theme === "dark"
+
 
     const series = data.map((item) => item.count)
     const labels = data.map((item) => statusLabels[item.status])
@@ -70,7 +70,10 @@ export function StatusDistributionChart({ data }: StatusDistributionChartProps) 
         chart: {
             type: "donut",
             fontFamily: "inherit",
-            foreColor: isDark ? "#a1a1aa" : "#52525b",
+            foreColor: isDark ? "#e4e4e7" : "#52525b",
+        },
+        stroke: {
+            show: false,
         },
         labels: labels,
         colors: colors,
@@ -119,6 +122,10 @@ export function StatusDistributionChart({ data }: StatusDistributionChartProps) 
         },
         tooltip: {
             theme: isDark ? "dark" : "light",
+            style: {
+                fontSize: '12px',
+                fontFamily: 'inherit',
+            },
             y: {
                 formatter: (value: number) => `${value} طلب`,
             },
@@ -126,13 +133,13 @@ export function StatusDistributionChart({ data }: StatusDistributionChartProps) 
     }
 
     return (
-        <Card>
+        <Card className="h-full">
             <CardHeader>
                 <CardTitle>توزيع حالات الطلبات</CardTitle>
                 <CardDescription>نسب الطلبات حسب الحالة</CardDescription>
             </CardHeader>
             <CardContent>
-                <Chart options={options} series={series} type="donut" height={350} />
+                <Chart key={isDark ? 'dark' : 'light'} options={options} series={series} type="donut" height={350} />
             </CardContent>
         </Card>
     )

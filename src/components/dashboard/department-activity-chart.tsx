@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useTheme } from "next-themes"
+import { useIsDarkMode } from "@/hooks/use-mode"
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false })
 
@@ -19,7 +19,7 @@ interface DepartmentActivityChartProps {
 }
 
 export function DepartmentActivityChart({ data }: DepartmentActivityChartProps) {
-    const { theme } = useTheme()
+    const isDark = useIsDarkMode()
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
@@ -42,7 +42,7 @@ export function DepartmentActivityChart({ data }: DepartmentActivityChartProps) 
         )
     }
 
-    const isDark = theme === "dark"
+
 
     const series = [
         {
@@ -59,32 +59,46 @@ export function DepartmentActivityChart({ data }: DepartmentActivityChartProps) 
                 show: false,
             },
             fontFamily: "inherit",
-            foreColor: isDark ? "#a1a1aa" : "#52525b",
+            foreColor: isDark ? "#e4e4e7" : "#52525b",
         },
         plotOptions: {
             bar: {
-                horizontal: true,
+                horizontal: false, // تغيير إلى عمودي ليتناسب مع الـ Legend في الأسفل
+                columnWidth: "55%",
                 borderRadius: 4,
+                distributed: true, // تلوين كل عمود بلون مختلف
                 dataLabels: {
                     position: "top",
                 },
             },
         },
         dataLabels: {
-            enabled: true,
-            offsetX: -6,
-            style: {
-                fontSize: "12px",
-                colors: ["#fff"],
-            },
+            enabled: false,
+        },
+        legend: {
+            show: true,
+            position: "bottom",
+            horizontalAlign: "center",
+            fontFamily: "inherit",
+            itemMargin: {
+                horizontal: 10,
+                vertical: 5
+            }
         },
         xaxis: {
             categories: data.map((item) => item.departmentName),
             labels: {
+                show: false, // إخفاء الأسماء من المحور لأنها موجودة في الـ Legend
                 style: {
                     fontSize: "12px",
                 },
             },
+            axisBorder: {
+                show: false
+            },
+            axisTicks: {
+                show: false
+            }
         },
         yaxis: {
             labels: {
@@ -93,13 +107,32 @@ export function DepartmentActivityChart({ data }: DepartmentActivityChartProps) 
                 },
             },
         },
-        colors: ["#8b5cf6"],
+        // ألوان متناسقة للأقسام
+        colors: [
+            "#3b82f6", // blue
+            "#10b981", // emerald
+            "#f59e0b", // amber
+            "#ef4444", // red
+            "#8b5cf6", // violet
+            "#ec4899", // pink
+            "#06b6d4", // cyan
+            "#f97316", // orange
+        ],
         grid: {
-            borderColor: isDark ? "#27272a" : "#e4e4e7",
-            strokeDashArray: 4,
+            borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+            strokeDashArray: 0,
+            xaxis: {
+                lines: {
+                    show: false
+                }
+            }
         },
         tooltip: {
             theme: isDark ? "dark" : "light",
+            style: {
+                fontSize: '12px',
+                fontFamily: 'inherit',
+            },
             y: {
                 formatter: (value: number) => `${value} طلب`,
             },
@@ -107,13 +140,13 @@ export function DepartmentActivityChart({ data }: DepartmentActivityChartProps) 
     }
 
     return (
-        <Card>
+        <Card className="h-full">
             <CardHeader>
-                <CardTitle>نشاط الأقسام</CardTitle>
-                <CardDescription>مقارنة عدد الطلبات لكل قسم</CardDescription>
+                <CardTitle>أكثر الأقسام نشاطاً</CardTitle>
+                <CardDescription>أعلى 5 أقسام من حيث عدد الطلبات</CardDescription>
             </CardHeader>
             <CardContent>
-                <Chart options={options} series={series} type="bar" height={350} />
+                <Chart key={isDark ? 'dark' : 'light'} options={options} series={series} type="bar" height={350} />
             </CardContent>
         </Card>
     )

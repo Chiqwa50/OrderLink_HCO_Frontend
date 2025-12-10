@@ -13,6 +13,13 @@ import {
   Users,
   Warehouse,
 } from "lucide-react"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
 import { useAuth } from "@/contexts/auth-context"
 import { api } from "@/lib/api"
 import { StatsCard } from "@/components/dashboard/stats-card"
@@ -20,7 +27,7 @@ import { OrdersTimelineChart } from "@/components/dashboard/orders-timeline-char
 import { DepartmentActivityChart } from "@/components/dashboard/department-activity-chart"
 import { StatusDistributionChart } from "@/components/dashboard/status-distribution-chart"
 import { TopItemsList } from "@/components/dashboard/top-items-list"
-import { TopDepartmentsList } from "@/components/dashboard/top-departments-list"
+import { TopWarehouseUsersList } from "@/components/dashboard/top-warehouse-users-list"
 import { useToast } from "@/hooks/use-toast"
 
 interface DashboardData {
@@ -52,6 +59,13 @@ interface DashboardData {
     count: number
     percentage: number
   }>
+  topWarehouseUsers: Array<{
+    userId: string
+    userName: string
+    warehousesLabel: string
+    completedOrders: number
+    avgPreparationTime: number
+  }>
 }
 
 export default function DashboardPage() {
@@ -60,6 +74,8 @@ export default function DashboardPage() {
   const { toast } = useToast()
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [timelineDays, setTimelineDays] = useState(7)
+  const [isTimelineLoading, setIsTimelineLoading] = useState(false)
 
   useEffect(() => {
     // توجيه المستخدم حسب دوره إذا لم يكن مسؤولاً
@@ -90,13 +106,14 @@ export default function DashboardPage() {
     try {
       setIsLoading(true)
 
-      const [statsRes, timelineRes, departmentsRes, itemsRes, distributionRes] =
+      const [statsRes, timelineRes, departmentsRes, itemsRes, distributionRes, warehouseUsersRes] =
         await Promise.all([
           api.getDashboardStats(),
-          api.getOrdersTimeline(7),
-          api.getDepartmentActivity(10),
+          api.getOrdersTimeline(timelineDays),
+          api.getDepartmentActivity(5),
           api.getTopItems(5),
           api.getOrderStatusDistribution(),
+          api.getTopWarehouseUsers(5),
         ])
 
       setData({
@@ -105,6 +122,7 @@ export default function DashboardPage() {
         departments: departmentsRes.departments,
         topItems: itemsRes.items,
         statusDistribution: distributionRes.distribution,
+        topWarehouseUsers: warehouseUsersRes.users,
       })
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error)
@@ -115,6 +133,29 @@ export default function DashboardPage() {
       })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleTimelinePeriodChange = async (days: number) => {
+    setTimelineDays(days)
+    setIsTimelineLoading(true)
+    try {
+      const timelineRes = await api.getOrdersTimeline(days)
+      if (data) {
+        setData({
+          ...data,
+          timeline: timelineRes.timeline,
+        })
+      }
+    } catch (error: any) {
+      console.error("Error fetching timeline data:", error)
+      toast({
+        title: "خطأ",
+        description: error.message || "حدث خطأ أثناء جلب بيانات الطلبات",
+        variant: "destructive",
+      })
+    } finally {
+      setIsTimelineLoading(false)
     }
   }
 
@@ -181,90 +222,132 @@ export default function DashboardPage() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title="إجمالي الطلبات"
-          value={data.stats.totalOrders}
-          description="جميع الطلبات في النظام"
-          icon={ShoppingCart}
-          iconClassName="text-blue-600 dark:text-blue-400"
-        />
-        <StatsCard
-          title="طلبات اليوم"
-          value={data.stats.todayOrders}
-          description="الطلبات المنشأة اليوم"
-          icon={Clock}
-          iconClassName="text-amber-600 dark:text-amber-400"
-        />
-        <StatsCard
-          title="قيد المراجعة"
-          value={data.stats.pendingOrders}
-          description="تحتاج للموافقة"
-          icon={Package}
-          iconClassName="text-orange-600 dark:text-orange-400"
-        />
-        <StatsCard
-          title="قيد التجهيز"
-          value={data.stats.preparingOrders}
-          description="قيد التجهيز حالياً"
-          icon={PackageCheck}
-          iconClassName="text-purple-600 dark:text-purple-400"
-        />
-        <StatsCard
-          title="جاهزة للتوصيل"
-          value={data.stats.readyOrders}
-          description="جاهزة للاستلام"
-          icon={Truck}
-          iconClassName="text-green-600 dark:text-green-400"
-        />
-        <StatsCard
-          title="تم التسليم"
-          value={data.stats.deliveredOrders}
-          description="طلبات مكتملة"
-          icon={PackageCheck}
-          iconClassName="text-cyan-600 dark:text-cyan-400"
-        />
-        <StatsCard
-          title="السائقون النشطون"
-          value={data.stats.activeDrivers}
-          description="سائقون في النظام"
-          icon={Users}
-          iconClassName="text-indigo-600 dark:text-indigo-400"
-        />
-        <StatsCard
-          title="الأقسام والمستودعات"
-          value={`${data.stats.activeDepartments} / ${data.stats.activeWarehouses}`}
-          description="قسم / مستودع نشط"
-          icon={Building2}
-          iconClassName="text-pink-600 dark:text-pink-400"
-        />
-      </div>
+      {/* Statistics Cards */}
+      {(() => {
+        const statsCards = [
+          {
+            title: "إجمالي الطلبات",
+            value: data.stats.totalOrders,
+            description: "جميع الطلبات في النظام",
+            icon: ShoppingCart,
+            iconClassName: "text-blue-600 dark:text-blue-400",
+          },
+          {
+            title: "طلبات اليوم",
+            value: data.stats.todayOrders,
+            description: "الطلبات المنشأة اليوم",
+            icon: Clock,
+            iconClassName: "text-amber-600 dark:text-amber-400",
+          },
+          {
+            title: "قيد المراجعة",
+            value: data.stats.pendingOrders,
+            description: "تحتاج للموافقة",
+            icon: Package,
+            iconClassName: "text-orange-600 dark:text-orange-400",
+          },
+          {
+            title: "قيد التجهيز",
+            value: data.stats.preparingOrders,
+            description: "قيد التجهيز حالياً",
+            icon: PackageCheck,
+            iconClassName: "text-purple-600 dark:text-purple-400",
+          },
+          {
+            title: "جاهزة للتوصيل",
+            value: data.stats.readyOrders,
+            description: "جاهزة للاستلام",
+            icon: Truck,
+            iconClassName: "text-green-600 dark:text-green-400",
+          },
+          {
+            title: "تم التسليم",
+            value: data.stats.deliveredOrders,
+            description: "طلبات مكتملة",
+            icon: PackageCheck,
+            iconClassName: "text-cyan-600 dark:text-cyan-400",
+          },
+          {
+            title: "السائقون النشطون",
+            value: data.stats.activeDrivers,
+            description: "سائقون في النظام",
+            icon: Users,
+            iconClassName: "text-indigo-600 dark:text-indigo-400",
+          },
+          {
+            title: "الأقسام والمستودعات",
+            value: `${data.stats.activeDepartments} / ${data.stats.activeWarehouses}`,
+            description: "قسم / مستودع نشط",
+            icon: Building2,
+            iconClassName: "text-pink-600 dark:text-pink-400",
+          },
+        ]
+
+        return (
+          <div className="space-y-4">
+            {/* Mobile/Tablet View - Carousel */}
+            <div className="block lg:hidden px-1">
+              <Carousel
+                opts={{
+                  align: "start",
+                  loop: true,
+                  direction: "rtl",
+                }}
+                className="w-full"
+              >
+                <CarouselContent>
+                  {statsCards.map((card, index) => (
+                    <CarouselItem key={index} className="md:basis-1/2">
+                      <StatsCard {...card} />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <div className="hidden md:block">
+                  <CarouselPrevious className="left-0" />
+                  <CarouselNext className="right-0" />
+                </div>
+              </Carousel>
+            </div>
+
+            {/* Desktop View - Grid */}
+            <div className="hidden lg:grid gap-4 grid-cols-4">
+              {statsCards.map((card, index) => (
+                <StatsCard key={index} {...card} />
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Charts Grid */}
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
-        {/* Orders Timeline - Full width on mobile, 2 cols on lg, 2 cols on xl */}
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+        {/* Orders Timeline - Full width */}
         <div className="lg:col-span-2">
-          <OrdersTimelineChart data={data.timeline} />
+          <OrdersTimelineChart
+            data={data.timeline}
+            isLoading={isTimelineLoading}
+            onPeriodChange={handleTimelinePeriodChange}
+          />
         </div>
 
-        {/* Status Distribution */}
-        <div className="lg:col-span-2 xl:col-span-1">
-          <StatusDistributionChart data={data.statusDistribution} />
-        </div>
-
-        {/* Department Activity - Full width on mobile, 2 cols on lg, 2 cols on xl */}
-        <div className="lg:col-span-2">
+        {/* Department Activity */}
+        <div className="lg:col-span-1">
           <DepartmentActivityChart data={data.departments} />
         </div>
 
-        {/* Top Items */}
+        {/* Status Distribution */}
+        <div className="lg:col-span-1">
+          <StatusDistributionChart data={data.statusDistribution} />
+        </div>
+
+        {/* Top Items - Full width */}
         <div className="lg:col-span-1">
           <TopItemsList data={data.topItems} />
         </div>
 
-        {/* Top Departments */}
+        {/* Top Warehouse Users */}
         <div className="lg:col-span-1">
-          <TopDepartmentsList data={data.departments} />
+          <TopWarehouseUsersList data={data.topWarehouseUsers} />
         </div>
       </div>
     </div>
