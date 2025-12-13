@@ -88,7 +88,7 @@ export function OrderFiltersExpandable({
   ).length
 
   return (
-    <div className="w-full relative">
+    <div className="w-full">
       {/* Toggle Button */}
       <Button
         variant="outline"
@@ -114,7 +114,7 @@ export function OrderFiltersExpandable({
 
       {/* Expandable Filters Container - Full Width Below Parent */}
       {isExpanded && (
-        <div className="absolute left-0 right-0 mt-2 z-10">
+        <div className="absolute left-0 right-0 top-full mt-2 z-10">
           <div className="rounded-lg border bg-card p-6 shadow-lg">
             <div className="space-y-4">
               {/* Filters Header */}
