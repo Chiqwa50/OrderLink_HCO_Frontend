@@ -360,9 +360,9 @@ export function OrderCard({
               </>
             )}
 
-            {/* تعديل - للمدير فقط */}
+            {/* تعديل - للمدير فقط - يظهر فقط للطلبات قيد المراجعة */}
             {userRole === "ADMIN" &&
-              !["DELIVERED", "REJECTED"].includes(order.status) && (
+              order.status === "PENDING" && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

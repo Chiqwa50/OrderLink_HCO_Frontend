@@ -215,7 +215,7 @@ export function OrdersTable({
                         </Button>
                       )}
                       {onEditOrder &&
-                        !["DELIVERED", "REJECTED"].includes(order.status) && (
+                        order.status === "PENDING" && (
                           <Button
                             variant="ghost"
                             size="icon"

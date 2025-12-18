@@ -65,6 +65,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { OrderPreparationWizard } from "@/components/orders/OrderPreparationWizard"
+import { OrderEditWizard } from "@/components/orders/OrderEditWizard"
 import { EditOrderDialog } from "@/components/orders/edit-order-dialog"
 import { OrderCard } from "@/components/orders/order-card"
 import { OrderDetailsSlidePanel } from "@/components/orders/order-details-slide-panel"
@@ -87,8 +88,10 @@ export default function ManageOrdersPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showEditWizard, setShowEditWizard] = useState(false)
   const [showPrepareWizard, setShowPrepareWizard] = useState(false)
   const [orderToPrepare, setOrderToPrepare] = useState<Order | null>(null)
+  const [orderToEditWizard, setOrderToEditWizard] = useState<Order | null>(null)
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -216,8 +219,11 @@ export default function ManageOrdersPage() {
   }, [])
 
   const handleEditOrder = useCallback((order: Order) => {
-    setSelectedOrder(order)
-    setShowEditDialog(true)
+    // Use Wizard for PENDING orders only
+    if (order.status === "PENDING") {
+      setOrderToEditWizard(order)
+      setShowEditWizard(true)
+    }
   }, [])
 
   const handleSaveOrder = useCallback(
@@ -236,6 +242,14 @@ export default function ManageOrdersPage() {
     },
     []
   )
+
+  const handleEditWizardSuccess = useCallback(() => {
+    setShowEditWizard(false)
+    setOrderToEditWizard(null)
+    loadOrders(false)
+  }, [])
+
+
 
   const handleDeleteClick = useCallback((order: Order) => {
     setOrderToDelete(order)
@@ -1161,9 +1175,7 @@ export default function ManageOrdersPage() {
 
                                   {/* تعديل - للمدير فقط */}
                                   {user?.role === "ADMIN" &&
-                                    !["DELIVERED", "REJECTED"].includes(
-                                      order.status
-                                    ) && (
+                                    order.status === "PENDING" && (
                                       <>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
@@ -1267,6 +1279,17 @@ export default function ManageOrdersPage() {
           setSelectedOrder(null)
         }}
         onSave={handleSaveOrder}
+      />
+
+      {/* Order Edit Wizard */}
+      <OrderEditWizard
+        order={orderToEditWizard}
+        open={showEditWizard}
+        onOpenChange={(open) => {
+          setShowEditWizard(open)
+          if (!open) setOrderToEditWizard(null)
+        }}
+        onSuccess={handleEditWizardSuccess}
       />
 
       {/* Delete Confirmation Dialog */}
