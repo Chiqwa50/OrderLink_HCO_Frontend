@@ -105,6 +105,16 @@ class ApiClient {
   async getTopWarehouseUsers(limit: number = 5): Promise<any> {
     return this.request(`/dashboard/top-warehouse-users?limit=${limit}`)
   }
+
+  async getRecentOrders(limit: number = 5): Promise<any> {
+    return this.request(`/orders?limit=${limit}`)
+  }
+
+  async getRecentUnavailableItems(limit: number = 5): Promise<any> {
+    return this.request(
+      `/items/unavailable/logs?limit=${limit}&sortBy=createdAt&sortOrder=desc`
+    )
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL)

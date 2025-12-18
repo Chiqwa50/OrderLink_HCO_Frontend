@@ -20,6 +20,13 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { format } from "date-fns"
 import { useAuth } from "@/contexts/auth-context"
 import { api } from "@/lib/api"
 import { StatsCard } from "@/components/dashboard/stats-card"
@@ -29,6 +36,7 @@ import { StatusDistributionChart } from "@/components/dashboard/status-distribut
 import { TopItemsList } from "@/components/dashboard/top-items-list"
 import { TopWarehouseUsersList } from "@/components/dashboard/top-warehouse-users-list"
 import { useToast } from "@/hooks/use-toast"
+import { OrderDetailsSlidePanel } from "@/components/orders/order-details-slide-panel"
 
 interface DashboardData {
   stats: {
@@ -66,6 +74,24 @@ interface DashboardData {
     completedOrders: number
     avgPreparationTime: number
   }>
+  recentOrders: Array<{
+    id: string
+    orderNumber: string
+    status: string
+    createdAt: string
+    departmentName: string
+    warehouseName: string
+  }>
+  recentUnavailableItems: Array<{
+    id: string
+    itemName: string
+    warehouse: { name: string }
+    timestamp: string
+    order: {
+      id: string
+      orderNumber: string
+    }
+  }>
 }
 
 export default function DashboardPage() {
@@ -76,6 +102,8 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [timelineDays, setTimelineDays] = useState(7)
   const [isTimelineLoading, setIsTimelineLoading] = useState(false)
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const [showDetailsPanel, setShowDetailsPanel] = useState(false)
 
   useEffect(() => {
     // توجيه المستخدم حسب دوره إذا لم يكن مسؤولاً
@@ -106,15 +134,25 @@ export default function DashboardPage() {
     try {
       setIsLoading(true)
 
-      const [statsRes, timelineRes, departmentsRes, itemsRes, distributionRes, warehouseUsersRes] =
-        await Promise.all([
-          api.getDashboardStats(),
-          api.getOrdersTimeline(timelineDays),
-          api.getDepartmentActivity(5),
-          api.getTopItems(5),
-          api.getOrderStatusDistribution(),
-          api.getTopWarehouseUsers(5),
-        ])
+      const [
+        statsRes,
+        timelineRes,
+        departmentsRes,
+        itemsRes,
+        distributionRes,
+        warehouseUsersRes,
+        recentOrdersRes,
+        recentUnavailableItemsRes,
+      ] = await Promise.all([
+        api.getDashboardStats(),
+        api.getOrdersTimeline(timelineDays),
+        api.getDepartmentActivity(5),
+        api.getTopItems(5),
+        api.getOrderStatusDistribution(),
+        api.getTopWarehouseUsers(5),
+        api.getRecentOrders(5),
+        api.getRecentUnavailableItems(5),
+      ])
 
       setData({
         stats: statsRes.stats,
@@ -123,6 +161,8 @@ export default function DashboardPage() {
         topItems: itemsRes.items,
         statusDistribution: distributionRes.distribution,
         topWarehouseUsers: warehouseUsersRes.users,
+        recentOrders: recentOrdersRes.orders,
+        recentUnavailableItems: recentUnavailableItemsRes.logs,
       })
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error)
@@ -350,6 +390,127 @@ export default function DashboardPage() {
           <TopWarehouseUsersList data={data.topWarehouseUsers} />
         </div>
       </div>
+
+      {/* Recent Activity Grid */}
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+        {/* Recent Orders */}
+        <Card>
+          <CardHeader>
+            <CardTitle>آخر الطلبات</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {data.recentOrders.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  لا توجد طلبات حديثة
+                </p>
+              ) : (
+                <div className="relative w-full overflow-auto">
+                  <table className="w-full caption-bottom text-sm">
+                    <thead className="[&_tr]:border-b">
+                      <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                        <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
+                          رقم الطلب
+                        </th>
+                        <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
+                          الحالة
+                        </th>
+                        <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
+                          التاريخ
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="[&_tr:last-child]:border-0">
+                      {data.recentOrders.map((order) => (
+                        <tr
+                          key={order.id}
+                          className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer"
+                          onClick={() => {
+                            setSelectedOrderId(order.id)
+                            setShowDetailsPanel(true)
+                          }}
+                        >
+                          <td className="p-4 align-middle font-medium text-primary hover:underline">
+                            {order.orderNumber}
+                          </td>
+                          <td className="p-4 align-middle">{order.status}</td>
+                          <td className="p-4 align-middle" dir="ltr">
+                            {format(new Date(order.createdAt), "yyyy/MM/dd")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Unavailable Items */}
+        <Card>
+          <CardHeader>
+            <CardTitle>آخر المواد غير المتوفرة</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {data.recentUnavailableItems.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  لا توجد سجلات حديثة
+                </p>
+              ) : (
+                <div className="relative w-full overflow-auto">
+                  <table className="w-full caption-bottom text-sm">
+                    <thead className="[&_tr]:border-b">
+                      <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                        <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
+                          المادة
+                        </th>
+                        <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
+                          المستودع
+                        </th>
+                        <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
+                          التاريخ
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="[&_tr:last-child]:border-0">
+                      {data.recentUnavailableItems.map((log) => (
+                        <tr
+                          key={log.id}
+                          className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer"
+                          onClick={() => {
+                            if (log.order?.id) {
+                              setSelectedOrderId(log.order.id)
+                              setShowDetailsPanel(true)
+                            }
+                          }}
+                        >
+                          <td className="p-4 align-middle font-medium text-primary hover:underline">
+                            {log.itemName}
+                          </td>
+                          <td className="p-4 align-middle">
+                            {log.warehouse?.name || "-"}
+                          </td>
+                          <td className="p-4 align-middle" dir="ltr">
+                            {format(new Date(log.timestamp), "yyyy/MM/dd")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <OrderDetailsSlidePanel
+        orderId={selectedOrderId}
+        open={showDetailsPanel}
+        onOpenChange={setShowDetailsPanel}
+      />
     </div>
   )
 }
