@@ -35,6 +35,7 @@ interface OrderFiltersExpandableProps {
   showUserFilter?: boolean
   showStatusFilter?: boolean
   excludeStatuses?: string[] // حالات يجب استبعادها من خيارات الفلترة
+  align?: "start" | "end" // محاذاة القائمة المنسدلة
 }
 
 const statusOptions = [
@@ -58,6 +59,7 @@ export function OrderFiltersExpandable({
   showUserFilter = false,
   showStatusFilter = true,
   excludeStatuses = [],
+  align = "start",
 }: OrderFiltersExpandableProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -88,7 +90,7 @@ export function OrderFiltersExpandable({
   ).length
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       {/* Toggle Button */}
       <Button
         variant="outline"
@@ -114,7 +116,10 @@ export function OrderFiltersExpandable({
 
       {/* Expandable Filters Container - Full Width Below Parent */}
       {isExpanded && (
-        <div className="absolute left-0 right-0 top-full mt-2 z-10">
+        <div
+          className={`absolute top-full mt-2 z-50 w-full sm:w-[600px] ${align === "end" ? "left-0" : "right-0"
+            }`}
+        >
           <div className="rounded-lg border bg-card p-6 shadow-lg">
             <div className="space-y-4">
               {/* Filters Header */}
@@ -137,7 +142,7 @@ export function OrderFiltersExpandable({
               </div>
 
               {/* Filters Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* فلتر الحالة */}
                 {showStatusFilter && (
                   <div className="space-y-2">
@@ -148,7 +153,7 @@ export function OrderFiltersExpandable({
                         handleFilterChange("status", value)
                       }
                     >
-                      <SelectTrigger className="h-10">
+                      <SelectTrigger className="h-10 w-full">
                         <SelectValue placeholder="اختر الحالة" />
                       </SelectTrigger>
                       <SelectContent>
@@ -172,7 +177,7 @@ export function OrderFiltersExpandable({
                         handleFilterChange("departmentId", value)
                       }
                     >
-                      <SelectTrigger className="h-10">
+                      <SelectTrigger className="h-10 w-full">
                         <SelectValue placeholder="اختر القسم" />
                       </SelectTrigger>
                       <SelectContent>
@@ -197,7 +202,7 @@ export function OrderFiltersExpandable({
                         handleFilterChange("warehouseId", value)
                       }
                     >
-                      <SelectTrigger className="h-10">
+                      <SelectTrigger className="h-10 w-full">
                         <SelectValue placeholder="اختر المستودع" />
                       </SelectTrigger>
                       <SelectContent>
@@ -222,7 +227,7 @@ export function OrderFiltersExpandable({
                         handleFilterChange("createdBy", value)
                       }
                     >
-                      <SelectTrigger className="h-10">
+                      <SelectTrigger className="h-10 w-full">
                         <SelectValue placeholder="اختر المستخدم" />
                       </SelectTrigger>
                       <SelectContent>
@@ -246,7 +251,7 @@ export function OrderFiltersExpandable({
                     onChange={(e) =>
                       handleFilterChange("dateFrom", e.target.value)
                     }
-                    className="h-10"
+                    className="h-10 w-full block"
                   />
                 </div>
 
@@ -259,7 +264,7 @@ export function OrderFiltersExpandable({
                     onChange={(e) =>
                       handleFilterChange("dateTo", e.target.value)
                     }
-                    className="h-10"
+                    className="h-10 w-full block"
                   />
                 </div>
               </div>

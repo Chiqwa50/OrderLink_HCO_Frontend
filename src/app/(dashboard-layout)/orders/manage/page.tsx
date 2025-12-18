@@ -845,6 +845,7 @@ export default function ManageOrdersPage() {
                   showUserFilter={true}
                   showStatusFilter={true}
                   excludeStatuses={["DELIVERED", "REJECTED"]}
+                  align="end"
                 />
               </div>
             </div>
