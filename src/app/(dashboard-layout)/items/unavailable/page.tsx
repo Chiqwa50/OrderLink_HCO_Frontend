@@ -178,10 +178,20 @@ export default function UnavailableItemsPage() {
             const printLogs = data.logs || []
 
             // 2. Generate HTML
-            const printWindow = window.open('', '_blank')
-            if (!printWindow) {
-                alert("Please allow popups to print")
-                return
+            // Create a hidden iframe
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            document.body.appendChild(iframe);
+
+            const iframeDoc = iframe.contentWindow?.document;
+            if (!iframeDoc) {
+                document.body.removeChild(iframe);
+                throw new Error("Could not create iframe document");
             }
 
             const dateStr = new Date().toLocaleDateString('ar-EG-u-nu-latn', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -243,7 +253,7 @@ export default function UnavailableItemsPage() {
               width: 100%; 
               border-collapse: collapse; 
               margin-bottom: 30px; 
-              table-layout: fixed; /* Ensure columns respect widths */
+              table-layout: auto; /* Allow columns to size by content */
             }
 
             th { 
@@ -254,15 +264,27 @@ export default function UnavailableItemsPage() {
               padding: 10px 8px;
               font-size: 12px;
               border: 1px solid var(--border-color);
-              white-space: nowrap; /* Keep headers on one line if possible */
+              white-space: nowrap; /* Keep headers on one line */
             }
 
             td { 
               border: 1px solid var(--border-color); 
               padding: 8px; 
-              vertical-align: top; /* Align text to top for better reading */
-              word-wrap: break-word; /* Wrap long text */
-              overflow-wrap: break-word;
+              vertical-align: top; 
+            }
+
+            /* Column specific classes */
+            .col-expand {
+              width: 100%;
+            }
+            
+            .col-fit {
+              width: 1%;
+              white-space: nowrap;
+            }
+
+            .col-notes {
+                min-width: 150px; /* Ensure notes have some space but don't take over */
             }
 
             tr:nth-child(even) { 
@@ -325,22 +347,22 @@ export default function UnavailableItemsPage() {
           <table>
             <thead>
               <tr>
-                ${visibleColumns.itemName ? '<th>اسم المادة</th>' : ''}
-                ${visibleColumns.warehouse ? '<th>المستودع</th>' : ''}
-                ${visibleColumns.orderNumber ? '<th>رقم الطلب</th>' : ''}
-                ${visibleColumns.user ? '<th>المستخدم</th>' : ''}
-                ${visibleColumns.date ? '<th>التاريخ</th>' : ''}
-                ${visibleColumns.notes ? '<th>ملاحظات</th>' : ''}
+                ${visibleColumns.itemName ? '<th class="col-expand">اسم المادة</th>' : ''}
+                ${visibleColumns.warehouse ? '<th class="col-fit">المستودع</th>' : ''}
+                ${visibleColumns.orderNumber ? '<th class="col-fit">رقم الطلب</th>' : ''}
+                ${visibleColumns.user ? '<th class="col-fit">المستخدم</th>' : ''}
+                ${visibleColumns.date ? '<th class="col-fit">التاريخ</th>' : ''}
+                ${visibleColumns.notes ? '<th class="col-notes">ملاحظات</th>' : ''}
               </tr>
             </thead>
             <tbody>
               ${printLogs.map((log: any) => `
                 <tr>
                   ${visibleColumns.itemName ? `<td><strong>${log.itemName || '-'}</strong></td>` : ''}
-                  ${visibleColumns.warehouse ? `<td>${log.warehouse?.name || '-'}</td>` : ''}
-                  ${visibleColumns.orderNumber ? `<td>${log.order?.orderNumber || '-'}</td>` : ''}
-                  ${visibleColumns.user ? `<td>${log.user?.name || '-'}</td>` : ''}
-                  ${visibleColumns.date ? `<td dir="ltr" style="text-align: right">${format(new Date(log.timestamp), "yyyy/MM/dd HH:mm")}</td>` : ''}
+                  ${visibleColumns.warehouse ? `<td class="col-fit">${log.warehouse?.name || '-'}</td>` : ''}
+                  ${visibleColumns.orderNumber ? `<td class="col-fit">${log.order?.orderNumber || '-'}</td>` : ''}
+                  ${visibleColumns.user ? `<td class="col-fit">${log.user?.name || '-'}</td>` : ''}
+                  ${visibleColumns.date ? `<td class="col-fit" dir="ltr" style="text-align: right">${format(new Date(log.timestamp), "yyyy/MM/dd HH:mm")}</td>` : ''}
                   ${visibleColumns.notes ? `<td>${log.notes || '-'}</td>` : ''}
                 </tr>
               `).join('')}
@@ -356,7 +378,6 @@ export default function UnavailableItemsPage() {
             document.fonts.ready.then(() => {
               setTimeout(() => {
                 window.print();
-                // window.close(); // Optional: close after print
               }, 500);
             });
           </script>
@@ -364,8 +385,13 @@ export default function UnavailableItemsPage() {
         </html>
       `
 
-            printWindow.document.write(htmlContent)
-            printWindow.document.close()
+            iframeDoc.write(htmlContent)
+            iframeDoc.close()
+
+            // Cleanup iframe after a delay to allow printing to initiate
+            setTimeout(() => {
+                document.body.removeChild(iframe);
+            }, 60000); // Remove after 1 minute (sufficient time for print dialog interaction)
 
         } catch (error) {
             console.error("Print error:", error)
