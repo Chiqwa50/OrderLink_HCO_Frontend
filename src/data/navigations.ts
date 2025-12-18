@@ -47,6 +47,16 @@ export const warehouseNavigations: NavigationType[] = [
     ],
   },
   {
+    title: "إدارة المواد",
+    items: [
+      {
+        title: "المواد غير المتوفرة",
+        href: "/items/unavailable",
+        iconName: "PackageX",
+      },
+    ],
+  },
+  {
     title: "الإعدادات",
     items: [
       {
@@ -141,6 +151,11 @@ export const adminNavigations: NavigationType[] = [
         title: "إضافة مادة",
         href: "/items/add",
         iconName: "PackagePlus",
+      },
+      {
+        title: "المواد غير المتوفرة",
+        href: "/items/unavailable",
+        iconName: "PackageX",
       },
     ],
   },

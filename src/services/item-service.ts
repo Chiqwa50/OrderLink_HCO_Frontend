@@ -185,6 +185,46 @@ class ItemService {
 
     return response
   }
+  /**
+   * جلب سجل المواد غير المتوفرة
+   */
+  async getUnavailableItems(filters: {
+    dateFrom?: string
+    dateTo?: string
+    category?: string
+    warehouseId?: string
+    sortBy?: string
+    sortOrder?: "asc" | "desc"
+    page?: number
+    limit?: number
+  }): Promise<{
+    logs: any[]
+    total: number
+    page: number
+    totalPages: number
+  }> {
+    const params = new URLSearchParams()
+    if (filters.dateFrom) params.append("dateFrom", filters.dateFrom)
+    if (filters.dateTo) params.append("dateTo", filters.dateTo)
+    if (filters.category) params.append("category", filters.category)
+    if (filters.warehouseId) params.append("warehouseId", filters.warehouseId)
+    if (filters.sortBy) params.append("sortBy", filters.sortBy)
+    if (filters.sortOrder) params.append("sortOrder", filters.sortOrder)
+    if (filters.page) params.append("page", filters.page.toString())
+    if (filters.limit) params.append("limit", filters.limit.toString())
+
+    const queryString = params.toString()
+    const endpoint = queryString
+      ? `/items/unavailable/logs?${queryString}`
+      : "/items/unavailable/logs"
+
+    return await this.request<{
+      logs: any[]
+      total: number
+      page: number
+      totalPages: number
+    }>(endpoint)
+  }
 }
 // تصدير instance واحد من الخدمة (Singleton Pattern)
 export const itemService = new ItemService()
